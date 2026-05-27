@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import ThemeToggle from '@/components/theme-toggle';
-import { Bell, Pencil, Settings, User } from 'lucide-react';
+import { Bell, EyeOff, Pencil, Settings, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { SerializedUserSettings } from '@/lib/user-settings';
 import AvatarCropModal, {
@@ -122,6 +122,7 @@ export default function SettingsClient({
   const [compactSidebar, setCompactSidebar] = useState(
     initialSettings.compactSidebar,
   );
+  const [soloMode, setSoloMode] = useState(initialSettings.soloMode);
   const [leaderboardUpdates, setLeaderboardUpdates] = useState(
     initialSettings.leaderboardUpdates,
   );
@@ -169,6 +170,10 @@ export default function SettingsClient({
       localStorage.setItem(
         'swm:room-invites',
         initialSettings.roomInvites ? '1' : '0',
+      );
+      localStorage.setItem(
+        'swm:solo-mode',
+        initialSettings.soloMode ? '1' : '0',
       );
     } catch {}
   }, [initialSettings]);
@@ -537,6 +542,19 @@ export default function SettingsClient({
                   onChange={(next) => {
                     setRoomInvites(next);
                     persistFlag('swm:room-invites', 'roomInvites', next);
+                  }}
+                />
+              }
+            />
+            <SettingRow
+              label="Solo mode"
+              description="Hide social features — rooms, leaderboards, and multiplayer"
+              control={
+                <Toggle
+                  checked={soloMode}
+                  onChange={(next) => {
+                    setSoloMode(next);
+                    persistFlag('swm:solo-mode', 'soloMode', next);
                   }}
                 />
               }

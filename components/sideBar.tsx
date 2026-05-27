@@ -39,6 +39,8 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
 
+const SOCIAL_LINKS = new Set(['/leaderboard', '/rooms']);
+
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Areas', href: '/areas', icon: Layers },
@@ -49,6 +51,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Check-in', href: '/checkins', icon: Sparkles },
   { label: 'Runs', href: '/runs', icon: Footprints },
   { label: 'Review', href: '/review', icon: BarChart3 },
+  { label: 'Records', href: '/records', icon: Trophy },
   { label: 'Todo', href: '/dashboard/todo', icon: CheckSquare },
   { label: 'Profile', href: '/profile', icon: UserCircle },
   { label: 'Settings', href: '/settings', icon: Settings },
@@ -534,7 +537,7 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
               </motion.p>
 
               <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                {NAV_ITEMS.map((item) => {
+                {NAV_ITEMS.filter((item) => !server?.soloMode || !SOCIAL_LINKS.has(item.href)).map((item) => {
                   const active = isActive(item.href);
                   return (
                     <motion.div

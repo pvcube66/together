@@ -8,6 +8,7 @@ export type SerializedUserSettings = {
   friendActivity: boolean;
   roomInvites: boolean;
   leaderboardUpdates: boolean;
+  soloMode: boolean;
   todoDdayDate: string;
   todoDdayTitle: string;
 };
@@ -20,6 +21,7 @@ export const DEFAULT_USER_SETTINGS: SerializedUserSettings = {
   friendActivity: false,
   roomInvites: true,
   leaderboardUpdates: false,
+  soloMode: false,
   todoDdayDate: '2026-06-01',
   todoDdayTitle: 'D-Day milestone',
 };
@@ -33,6 +35,7 @@ export function serializeUserSettings(
     friendActivity: boolean;
     roomInvites: boolean;
     leaderboardUpdates: boolean;
+    soloMode: boolean;
     todoDdayDate: string | null;
     todoDdayTitle: string | null;
   } | null,
@@ -46,6 +49,7 @@ export function serializeUserSettings(
     friendActivity: settings.friendActivity,
     roomInvites: settings.roomInvites,
     leaderboardUpdates: settings.leaderboardUpdates,
+    soloMode: settings.soloMode,
     todoDdayDate: settings.todoDdayDate ?? DEFAULT_USER_SETTINGS.todoDdayDate,
     todoDdayTitle: settings.todoDdayTitle ?? '',
   };
@@ -67,6 +71,7 @@ export async function getOrCreateUserSettings(
       friendActivity: true,
       roomInvites: true,
       leaderboardUpdates: true,
+      soloMode: true,
       todoDdayDate: true,
       todoDdayTitle: true,
     },

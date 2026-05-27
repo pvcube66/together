@@ -17,6 +17,7 @@ const patchSchema = z.object({
   friendActivity: z.boolean().optional(),
   roomInvites: z.boolean().optional(),
   leaderboardUpdates: z.boolean().optional(),
+  soloMode: z.boolean().optional(),
   todoDdayDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -65,6 +66,9 @@ export const PATCH = withApi(async (request: Request) => {
       ...(data.leaderboardUpdates !== undefined
         ? { leaderboardUpdates: data.leaderboardUpdates }
         : {}),
+      ...(data.soloMode !== undefined
+        ? { soloMode: data.soloMode }
+        : {}),
       ...(data.todoDdayDate !== undefined
         ? { todoDdayDate: data.todoDdayDate }
         : {}),
@@ -95,6 +99,9 @@ export const PATCH = withApi(async (request: Request) => {
       ...(data.leaderboardUpdates !== undefined
         ? { leaderboardUpdates: data.leaderboardUpdates }
         : {}),
+      ...(data.soloMode !== undefined
+        ? { soloMode: data.soloMode }
+        : {}),
       ...(data.todoDdayDate !== undefined
         ? { todoDdayDate: data.todoDdayDate }
         : {}),
@@ -110,6 +117,7 @@ export const PATCH = withApi(async (request: Request) => {
       friendActivity: true,
       roomInvites: true,
       leaderboardUpdates: true,
+      soloMode: true,
       todoDdayDate: true,
       todoDdayTitle: true,
     },

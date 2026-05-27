@@ -96,6 +96,7 @@ model UserSettings {
   friendActivity     Boolean  @default(false)
   roomInvites        Boolean  @default(true)
   leaderboardUpdates Boolean  @default(false)
+  soloMode           Boolean  @default(false)
   todoDdayDate       String?
   todoDdayTitle      String?
   createdAt          DateTime @default(now())
