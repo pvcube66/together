@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { signIn } from '@/lib/auth-client';
 import LandingCardStack from '@/components/landing-card-stack';
-import TestimonialAnimatedTooltip from '@/components/testimonial-animated-tooltip';
+// No import needed for TestimonialAnimatedTooltip
 
 const ERROR_MESSAGES: Record<string, string> = {
   oauth: 'OAuth sign-in failed. Please try again.',
@@ -225,12 +225,7 @@ function LoginPageContent() {
                           </div>
                         </div>
 
-                        <div className="mt-5 w-full max-w-[18.5rem]">
-                          <p className="mb-2.5 text-[11px] text-neutral-400">
-                            Be amongst the first ones to try out the app
-                          </p>
-                          <TestimonialAnimatedTooltip />
-                        </div>
+
                       </div>
 
                       {/* Right: cooler tonal pad + ambient glow / bloom */}
