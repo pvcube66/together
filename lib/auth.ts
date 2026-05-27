@@ -49,14 +49,9 @@ export const auth = betterAuth({
   }),
 
   baseURL: isProd
-    ? {
-        allowedHosts: [
-          "together-beryl-six.vercel.app",
-          "*.vercel.app",
-        ],
-      }
+    ? "https://together-beryl-six.vercel.app"
     : effectiveBetterAuthUrl(),
-  secret: process.env.BETTER_AUTH_SECRET,
+  secret: process.env.BETTER_AUTH_SECRET?.trim(),
 
   trustedOrigins,
 
@@ -94,16 +89,16 @@ export const auth = betterAuth({
     ...(hasGoogleAuth
       ? {
           google: {
-            clientId: process.env.GOOGLE_CLIENT_ID!,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            clientId: process.env.GOOGLE_CLIENT_ID!.trim(),
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!.trim(),
           },
         }
       : {}),
     ...(hasGitHubAuth
       ? {
           github: {
-            clientId: process.env.GITHUB_CLIENT_ID!,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+            clientId: process.env.GITHUB_CLIENT_ID!.trim(),
+            clientSecret: process.env.GITHUB_CLIENT_SECRET!.trim(),
           },
         }
       : {}),
