@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import ThemeToggle from '@/components/theme-toggle';
-import { Bell, EyeOff, Pencil, Settings, User } from 'lucide-react';
+import { Bell, Pencil, Settings, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { SerializedUserSettings } from '@/lib/user-settings';
 import AvatarCropModal, {
