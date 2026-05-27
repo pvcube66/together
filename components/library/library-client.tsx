@@ -358,9 +358,21 @@ export default function LibraryClient({
                               </span>
                             </div>
                           )}
-                          <p className="mt-0.5 truncate text-xs tabular-nums text-muted-foreground antialiased">
-                            {item.url}
-                          </p>
+                          <div className="mt-0.5 flex items-center gap-2">
+                            {item.area ? (
+                              <span className="inline-flex items-center gap-1 rounded-md border border-border/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                <span
+                                  className="h-1.5 w-1.5 rounded-full"
+                                  style={{ background: item.area.color }}
+                                />
+                                {item.area.icon && <span>{item.area.icon}</span>}
+                                {item.area.name}
+                              </span>
+                            ) : null}
+                            <span className="truncate text-xs tabular-nums text-muted-foreground antialiased">
+                              {item.url}
+                            </span>
+                          </div>
                         </div>
                         <div
                           className="flex shrink-0 items-center gap-1"

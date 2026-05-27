@@ -47,7 +47,14 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
 
-  baseURL: effectiveBetterAuthUrl(),
+  baseURL: isProd
+    ? {
+        allowedHosts: [
+          "together-beryl-six.vercel.app",
+          "*.vercel.app",
+        ],
+      }
+    : effectiveBetterAuthUrl(),
   secret: process.env.BETTER_AUTH_SECRET,
 
   trustedOrigins,

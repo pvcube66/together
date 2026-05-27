@@ -38,17 +38,28 @@ function LoginPageContent() {
         provider,
         callbackURL,
         errorCallbackURL,
+        disableRedirect: true,
       });
-      const redirectUrl =
-        (result as { data?: { url?: string } } | null)?.data?.url ??
-        (result as { url?: string } | null)?.url;
+
+      console.log("[Social Sign-in Result]:", result);
+
+      if (result?.error) {
+        console.error("[Social Sign-in Error Details]:", result.error);
+        setAuthError(result.error.message || 'OAuth sign-in could not start.');
+        setPendingProvider(null);
+        return;
+      }
+
+      const redirectUrl = result?.data?.url;
       if (redirectUrl && typeof window !== 'undefined') {
         window.location.assign(redirectUrl);
         return;
       }
+
       setAuthError('OAuth sign-in could not start.');
       setPendingProvider(null);
-    } catch {
+    } catch (err) {
+      console.error("[Social Sign-in Exception]:", err);
       setAuthError('OAuth sign-in failed. Please try again.');
       setPendingProvider(null);
     }

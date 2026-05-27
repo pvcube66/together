@@ -18,6 +18,7 @@ export const GET = withApi(async () => {
 
 const postSchema = z.object({
   action: z.enum(["start", "stop"]),
+  areaId: z.string().optional().nullable(),
 });
 
 export const POST = withApi(async (request: Request) => {
@@ -28,7 +29,7 @@ export const POST = withApi(async (request: Request) => {
   if (!parsed.success) return parsed.response;
 
   if (parsed.data.action === "start") {
-    const result = await startLiveStudySession(session.user.id);
+    const result = await startLiveStudySession(session.user.id, parsed.data.areaId);
     if ("error" in result) {
       return NextResponse.json({ error: result.error }, { status: 503 });
     }

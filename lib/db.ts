@@ -1,11 +1,23 @@
 import "dotenv/config";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
 
-const adapter = new PrismaNeon({
-  connectionString: process.env.DATABASE_URL!,
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error("[database] DATABASE_URL is not defined in environment variables.");
+}
+
+const pool = new Pool({
+  connectionString,
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
+
+const adapter = new PrismaPg(pool as any);
 
 export const prisma = new PrismaClient({ adapter });
 
-// — db.ts: Shared Prisma client with Neon serverless adapter. Used by API routes, jobs, and Better Auth.
+// — db.ts: Shared Prisma client with standard pg adapter (Supabase and production compatible).

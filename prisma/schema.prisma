@@ -79,6 +79,10 @@ model User {
   pingReceived  Ping[]         @relation("PingReceiver")
   settings      UserSettings?
   libraryItems  LibraryItem[]
+  areas         Area[]
+  problemLogs   ProblemLog[]
+  checkins      DailyCheckin[]
+  runLogs       RunLog[]
 
   @@map("users")
 }
@@ -156,6 +160,8 @@ model FocusSession {
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   roomId String?
   room   Room?   @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  areaId String?
+  area   Area?   @relation(fields: [areaId], references: [id], onDelete: SetNull)
 
   @@index([userId, completedAt])
   @@map("focus_sessions")
@@ -214,6 +220,8 @@ model Task {
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  areaId String?
+  area   Area?  @relation(fields: [areaId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@map("tasks")
@@ -249,9 +257,115 @@ model LibraryItem {
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  areaId String?
+  area   Area?  @relation(fields: [areaId], references: [id], onDelete: SetNull)
 
   @@index([userId, updatedAt(sort: Desc)])
   @@map("library_items")
+}
+
+model Area {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#6366f1")
+  icon      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  focusSessions FocusSession[]
+  tasks         Task[]
+  libraryItems  LibraryItem[]
+  problemLogs   ProblemLog[]
+  checkins      DailyCheckin[]
+  runLogs       RunLog[]
+
+  @@unique([userId, name])
+  @@index([userId, name])
+  @@map("areas")
+}
+
+model ProblemLog {
+  id               String            @id @default(cuid())
+  platform         String
+  problemTitle     String
+  problemUrl       String?
+  difficulty       ProblemDifficulty
+  topic            String?
+  timeTakenMinutes Int?
+  hintsUsed        Int?
+  notes            String?
+  solvedAt         DateTime          @default(now())
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  areaId String?
+  area   Area?  @relation(fields: [areaId], references: [id], onDelete: SetNull)
+
+  @@index([userId, solvedAt])
+  @@map("problem_logs")
+}
+
+enum ProblemDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model DailyCheckin {
+  id          String   @id @default(cuid())
+  date        DateTime
+  moodScore   Int      // 1-10
+  energyScore Int      // 1-10
+  focusScore  Int      // 1-10
+  sleepHours  Float?
+  wins        String?
+  blockers    String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  areaId String?
+  area   Area?  @relation(fields: [areaId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, date])
+  @@map("daily_checkins")
+}
+
+enum RunType {
+  EASY
+  TEMPO
+  INTERVAL
+  LONG_RUN
+  RACE
+}
+
+model RunLog {
+  id           String   @id @default(cuid())
+  distanceKm   Float
+  durationMin  Int
+  paceMinPerKm Float?
+  runType      RunType  @default(EASY)
+  effort       Int?
+  routeName    String?
+  notes        String?
+  runDate      DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  areaId String?
+  area   Area?  @relation(fields: [areaId], references: [id], onDelete: SetNull)
+
+  @@index([userId, runDate])
+  @@map("run_logs")
 }
 
 enum LibraryMediaKind {

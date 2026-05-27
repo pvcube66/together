@@ -2,9 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { CalendarDays, CheckSquare, Goal, Pencil, Plus, X } from 'lucide-react';
+import { CalendarDays, CheckSquare, Goal, Layers, Pencil, Plus, X } from 'lucide-react';
+import AreaSelector from '@/components/area-selector';
 import { useSound } from '@/components/sound-provider';
 import type { TaskType } from './page';
+
+type AreaInfo = {
+  id: string;
+  name: string;
+  color: string;
+  icon: string | null;
+} | null;
 
 type TodoTask = {
   id: string;
@@ -13,6 +21,8 @@ type TodoTask = {
   type: TaskType;
   deadline?: string;
   isCompleted: boolean;
+  areaId?: string | null;
+  area?: AreaInfo;
 };
 
 const TYPE_META: Record<
@@ -113,6 +123,7 @@ export default function TodoWorkspaceClient({
   const [modalType, setModalType] = useState<TaskType>('DAILY');
   const [modalDeadline, setModalDeadline] = useState('');
   const [modalTime, setModalTime] = useState('09:00');
+  const [modalAreaId, setModalAreaId] = useState<string | null>(null);
   const [modalBusy, setModalBusy] = useState(false);
   const [dDay, setDDay] = useState(initialDdayDate);
   const [dDayName, setDDayName] = useState(initialDdayTitle);
@@ -192,6 +203,7 @@ export default function TodoWorkspaceClient({
     setModalType('DAILY');
     setModalDeadline('');
     setModalTime('09:00');
+    setModalAreaId(null);
     play('modalOpen');
   }
 
@@ -214,6 +226,7 @@ export default function TodoWorkspaceClient({
       setModalDeadline('');
       setModalTime('09:00');
     }
+    setModalAreaId(task.areaId ?? null);
     play('modalOpen');
   }
 
@@ -294,6 +307,7 @@ export default function TodoWorkspaceClient({
                   `${modalDeadline}T${modalTime || '09:00'}:00`,
                 ).toISOString()
               : null,
+            areaId: modalAreaId,
           }),
         });
         if (!res.ok) {
@@ -310,6 +324,8 @@ export default function TodoWorkspaceClient({
                   description: updated.description,
                   type: updated.type,
                   deadline: updated.deadline ?? undefined,
+                  areaId: updated.areaId,
+                  area: updated.area,
                 }
               : t,
           ),
@@ -331,6 +347,7 @@ export default function TodoWorkspaceClient({
                 `${modalDeadline}T${modalTime || '09:00'}:00`,
               ).toISOString()
             : undefined,
+          areaId: modalAreaId,
         }),
       });
       if (!res.ok) {
@@ -460,6 +477,20 @@ export default function TodoWorkspaceClient({
                           {task.description?.trim() ||
                             TYPE_META[task.type].label}
                         </p>
+                        {task.area && (
+                          <div className="mt-1.5 flex items-center gap-1">
+                            <span
+                              className="h-2 w-2 shrink-0 rounded-full"
+                              style={{ background: task.area.color }}
+                            />
+                            <span className="text-[9.5px] font-medium text-muted-foreground/70">
+                              {task.area.icon && (
+                                <span className="mr-0.5">{task.area.icon}</span>
+                              )}
+                              {task.area.name}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </motion.button>
 
@@ -684,19 +715,20 @@ export default function TodoWorkspaceClient({
                     </select>
                   </label>
 
-                  <label className="block">
-                    <span className="mb-1 block text-[10.5px] text-muted-foreground">
-                      Date to be done
-                    </span>
-                    <input
-                      type="date"
-                      value={modalDeadline}
-                      onChange={(e) => setModalDeadline(e.target.value)}
-                      className="w-full rounded-md border border-border/70 bg-background px-3 py-2 text-[12px] text-foreground"
-                    />
-                  </label>
-                </div>
+                <label className="block">
+                  <span className="mb-1 block text-[10.5px] text-muted-foreground">
+                    Date to be done
+                  </span>
+                  <input
+                    type="date"
+                    value={modalDeadline}
+                    onChange={(e) => setModalDeadline(e.target.value)}
+                    className="w-full rounded-md border border-border/70 bg-background px-3 py-2 text-[12px] text-foreground"
+                  />
+                </label>
+              </div>
 
+              <div className="grid grid-cols-2 gap-2">
                 <label className="block">
                   <span className="mb-1 block text-[10.5px] text-muted-foreground">
                     Time
@@ -708,6 +740,14 @@ export default function TodoWorkspaceClient({
                     className="w-full rounded-md border border-border/70 bg-background px-3 py-2 text-[12px] text-foreground"
                   />
                 </label>
+                <AreaSelector
+                  value={modalAreaId}
+                  onChange={setModalAreaId}
+                  label="Area"
+                  allowNull
+                  nullLabel="No area"
+                />
+              </div>
 
                 <div className="flex justify-end gap-2 pt-1">
                   <motion.button

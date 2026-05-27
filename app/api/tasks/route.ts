@@ -20,6 +20,7 @@ const createSchema = z.object({
   description: z.string().trim().max(2000).optional(),
   deadline: z.string().datetime().optional(),
   type: z.enum(["DAILY", "YEARLY", "DEADLINE"]).default("DAILY"),
+  areaId: z.string().optional().nullable(),
 });
 
 export const GET = withApi(async (request: Request) => {
@@ -51,7 +52,10 @@ export const GET = withApi(async (request: Request) => {
     take: limit + 1,
     select: {
       id: true, title: true, description: true,
-      isCompleted: true, deadline: true, type: true, createdAt: true, updatedAt: true,
+      isCompleted: true, deadline: true, type: true,
+      areaId: true,
+      area: { select: { id: true, name: true, color: true, icon: true } },
+      createdAt: true, updatedAt: true,
     },
   });
 
@@ -69,7 +73,7 @@ export const POST = withApi(async (request: Request) => {
   const body = await parseRequestJson(request, createSchema);
   if (!body.success) return body.response;
 
-  const { title, description, deadline, type } = body.data;
+  const { title, description, deadline, type, areaId } = body.data;
 
   const task = await prisma.task.create({
     data: {
@@ -77,11 +81,15 @@ export const POST = withApi(async (request: Request) => {
       description,
       deadline: deadline ? new Date(deadline) : null,
       type,
+      areaId: areaId || null,
       userId: session.user.id,
     },
     select: {
       id: true, title: true, description: true,
-      isCompleted: true, deadline: true, type: true, createdAt: true, updatedAt: true,
+      isCompleted: true, deadline: true, type: true,
+      areaId: true,
+      area: { select: { id: true, name: true, color: true, icon: true } },
+      createdAt: true, updatedAt: true,
     },
   });
 

@@ -1,6 +1,6 @@
 import "dotenv/config";
-
-import { PrismaNeon } from "@prisma/adapter-neon";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
 const connectionString = process.env.DATABASE_URL;
@@ -9,9 +9,14 @@ if (!connectionString) {
   throw new Error("Missing DATABASE_URL for socket server.");
 }
 
-const adapter = new PrismaNeon({
+const pool = new Pool({
   connectionString,
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
+
+const adapter = new PrismaPg(pool as any);
 
 declare global {
   var studyWithMeSocketPrisma: PrismaClient | undefined;
@@ -19,13 +24,10 @@ declare global {
 
 export const prisma =
   globalThis.studyWithMeSocketPrisma ??
-  new PrismaClient({
-    adapter,
-  });
+  new PrismaClient({ adapter });
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.studyWithMeSocketPrisma = prisma;
 }
 
-// — db.ts: Prisma + Neon for the socket server process (dev singleton on global).
-
+// — db.ts: Prisma + pg adapter for the socket server process (dev singleton on global).

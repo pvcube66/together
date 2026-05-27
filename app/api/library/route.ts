@@ -13,6 +13,7 @@ import {
 
 const createLibrarySchema = z.object({
   url: z.string().trim().min(1).max(500),
+  areaId: z.string().optional().nullable(),
 });
 
 export const GET = withApi(async () => {
@@ -79,6 +80,7 @@ export const POST = withApi(async (request: Request) => {
         videoId: yt.videoId,
         playlistId: yt.playlistId,
         title: resolvedTitle,
+        areaId: parsed.data.areaId || null,
       },
       select: LIBRARY_LIST_SELECT,
     })

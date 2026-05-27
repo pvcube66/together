@@ -13,6 +13,7 @@ const patchSchema = z.object({
   deadline: z.string().datetime().optional().nullable(),
   isCompleted: z.boolean().optional(),
   type: z.enum(["DAILY", "YEARLY", "DEADLINE"]).optional(),
+  areaId: z.string().optional().nullable(),
 });
 
 async function resolveTask(id: string, userId: string) {
@@ -35,7 +36,7 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
   const body = await parseRequestJson(request, patchSchema);
   if (!body.success) return body.response;
 
-  const { title, description, deadline, isCompleted, type } = body.data;
+  const { title, description, deadline, isCompleted, type, areaId } = body.data;
 
   const updated = await prisma.task.update({
     where: { id },
@@ -45,10 +46,14 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
       ...(deadline !== undefined ? { deadline: deadline ? new Date(deadline) : null } : {}),
       ...(isCompleted !== undefined ? { isCompleted } : {}),
       ...(type !== undefined ? { type } : {}),
+      ...(areaId !== undefined ? { areaId } : {}),
     },
     select: {
       id: true, title: true, description: true,
-      isCompleted: true, deadline: true, type: true, createdAt: true, updatedAt: true,
+      isCompleted: true, deadline: true, type: true,
+      areaId: true,
+      area: { select: { id: true, name: true, color: true, icon: true } },
+      createdAt: true, updatedAt: true,
     },
   });
 

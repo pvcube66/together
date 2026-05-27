@@ -13,6 +13,12 @@ export function effectiveBetterAuthUrl(): string {
   if (isProd) {
     const prod = stripAuthOrigin(process.env.BETTER_AUTH_URL);
     if (prod) return prod;
+
+    const publicApp = stripAuthOrigin(process.env.NEXT_PUBLIC_APP_URL);
+    if (publicApp) return publicApp;
+
+    const vercel = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined;
+    if (vercel) return stripAuthOrigin(vercel);
   }
 
   if (authUseTunnel()) {

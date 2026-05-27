@@ -1,5 +1,12 @@
 import { parseYouTubeInput } from '@/lib/youtube';
 
+export type AreaRef = {
+  id: string;
+  name: string;
+  color: string;
+  icon: string | null;
+};
+
 export type LibraryItemView = {
   id: string;
   url: string;
@@ -7,6 +14,8 @@ export type LibraryItemView = {
   videoId: string | null;
   playlistId: string | null;
   title: string | null;
+  areaId: string | null;
+  area: AreaRef | null;
   createdAtIso: string;
   updatedAtIso: string;
   embedUrl: string | null;
@@ -19,6 +28,8 @@ type PrismaLibraryRow = {
   videoId: string | null;
   playlistId: string | null;
   title: string | null;
+  areaId: string | null;
+  area: AreaRef | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -35,6 +46,8 @@ export function libraryItemFromPrismaRow(
     videoId: row.videoId,
     playlistId: row.playlistId,
     title: row.title,
+    areaId: row.areaId,
+    area: row.area,
     createdAtIso: row.createdAt.toISOString(),
     updatedAtIso: row.updatedAt.toISOString(),
     embedUrl: parsed?.embedUrl ?? null,
@@ -70,6 +83,8 @@ export type LibraryItemPostBody = {
   videoId: string | null;
   playlistId: string | null;
   title: string | null;
+  areaId: string | null;
+  area: AreaRef | null;
   createdAt: string;
   updatedAt: string;
   embedUrl: string | null;
@@ -86,6 +101,8 @@ export function libraryItemFromPostBody(
     videoId: item.videoId,
     playlistId: item.playlistId,
     title: item.title,
+    areaId: item.areaId,
+    area: item.area,
     createdAtIso: item.createdAt,
     updatedAtIso: item.updatedAt,
     embedUrl: item.embedUrl,

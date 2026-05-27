@@ -13,7 +13,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
+  BarChart3,
+  Beaker,
   CheckSquare,
+  Layers,
   LibraryBig,
   LayoutDashboard,
   Menu,
@@ -23,6 +26,8 @@ import {
   UserCircle,
   Video,
   X,
+  Sparkles,
+  Footprints,
   type LucideIcon,
 } from 'lucide-react';
 import { useServerUserSettings } from '@/components/server-user-settings';
@@ -36,9 +41,14 @@ type NavItem = { label: string; href: string; icon: LucideIcon };
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Areas', href: '/areas', icon: Layers },
   { label: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'Rooms', href: '/rooms', icon: Video },
   { label: 'Library', href: '/library', icon: LibraryBig },
+  { label: 'Problems', href: '/problems', icon: Beaker },
+  { label: 'Check-in', href: '/checkins', icon: Sparkles },
+  { label: 'Runs', href: '/runs', icon: Footprints },
+  { label: 'Review', href: '/review', icon: BarChart3 },
   { label: 'Todo', href: '/dashboard/todo', icon: CheckSquare },
   { label: 'Profile', href: '/profile', icon: UserCircle },
   { label: 'Settings', href: '/settings', icon: Settings },

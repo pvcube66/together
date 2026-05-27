@@ -6,9 +6,24 @@ export const LIBRARY_LIST_SELECT = {
   videoId: true,
   playlistId: true,
   title: true,
+  areaId: true,
+  area: { select: { id: true, name: true, color: true, icon: true } },
   createdAt: true,
   updatedAt: true,
 } as const;
+
+export type LibraryItemWithArea = {
+  id: string;
+  url: string;
+  mediaKind: string | null;
+  videoId: string | null;
+  playlistId: string | null;
+  title: string | null;
+  areaId: string | null;
+  area: { id: string; name: string; color: string; icon: string | null } | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export function isMissingLibraryTableError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;

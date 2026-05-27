@@ -18,6 +18,8 @@ export default async function TodoPage() {
         type: true,
         deadline: true,
         isCompleted: true,
+        areaId: true,
+        area: { select: { id: true, name: true, color: true, icon: true } },
       },
     }),
     getOrCreateUserSettings(prisma, session.user.id),
@@ -32,6 +34,8 @@ export default async function TodoPage() {
         type: task.type as TaskType,
         deadline: task.deadline?.toISOString(),
         isCompleted: task.isCompleted,
+        areaId: task.areaId,
+        area: task.area,
       }))}
       initialDdayDate={settings.todoDdayDate}
       initialDdayTitle={settings.todoDdayTitle}

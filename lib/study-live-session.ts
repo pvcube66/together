@@ -5,10 +5,10 @@ import { bumpLeaderboards } from "@/lib/leaderboard";
 import { bumpStreak } from "@/lib/streak";
 import { buildTimerState, type TimerState } from "@/lib/timer-state";
 
-/** Matches `server/src/events.ts` live session JSON. */
 export type LiveSessionPayload = {
   startedAt: string;
   roomId: string | null;
+  areaId?: string | null;
 };
 
 export function liveSessionRedisKey(userId: string): string {
@@ -60,12 +60,14 @@ export async function finalizeLiveStudySession(
   const durationMin = Math.max(1, Math.floor(durationSec / 60));
   const studyDayStart = getStudyDayStart(completedAt);
   const roomId = live.roomId ?? null;
+  const areaId = live.areaId ?? null;
 
   const [, updatedUser] = await prisma.$transaction([
     prisma.focusSession.create({
       data: {
         userId,
         roomId,
+        areaId,
         durationMin,
         completedAt,
       },
@@ -105,7 +107,10 @@ async function takeLiveSession(userId: string): Promise<LiveSessionPayload | nul
   return stale;
 }
 
-export async function startLiveStudySession(userId: string): Promise<{ startedAt: string } | { error: string }> {
+export async function startLiveStudySession(
+  userId: string,
+  areaId?: string | null,
+): Promise<{ startedAt: string } | { error: string }> {
   if (!redis) {
     return { error: "Study timer requires Redis in this deployment." };
   }
@@ -121,7 +126,7 @@ export async function startLiveStudySession(userId: string): Promise<{ startedAt
   }
 
   const startedAt = new Date().toISOString();
-  const payload: LiveSessionPayload = { startedAt, roomId: null };
+  const payload: LiveSessionPayload = { startedAt, roomId: null, areaId: areaId ?? null };
   await redis.set(key, payload, { ex: LIVE_SESSION_TTL_SEC });
   return { startedAt };
 }
