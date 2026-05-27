@@ -23,7 +23,7 @@ export default function Icon() {
         fontFamily: 'Inter, system-ui, sans-serif',
       }}
     >
-      CR
+      TG
     </div>,
     size,
   );
