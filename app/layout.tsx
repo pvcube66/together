@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Curtus',
+  title: 'Together',
   description: 'Study rooms, shared focus, and accountability.',
 };
 
