@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import AreaSelector from '@/components/area-selector';
 import { useSound } from '@/components/sound-provider';
+import { AnimatedCounter } from '@/components/animated-counter';
 
 type LogItem = {
   id: string;
@@ -189,22 +190,47 @@ function LogsDashboard({
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <div className="rounded-lg border border-border/40 bg-card/60 px-3 py-2.5">
-          <p className="text-[20px] font-semibold tabular-nums text-foreground">{totalEntries}</p>
-          <p className="text-[10px] text-muted-foreground">Total Entries</p>
-        </div>
-        <div className="rounded-lg border border-border/40 bg-card/60 px-3 py-2.5">
-          <p className="text-[20px] font-semibold tabular-nums text-foreground">
-            {averageRating > 0 ? `${averageRating}/10` : '—'}
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
+        className="grid grid-cols-3 gap-2 sm:gap-3"
+      >
+        <motion.div
+          variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0, 0, 0.58, 1] } } }}
+          className="relative overflow-hidden rounded-lg border border-border/40 bg-card/60 px-3 py-2.5 transition-all hover:bg-card/85 hover:shadow-[var(--shadow-ambient-sm)]"
+        >
+          <div className="absolute right-0 top-0 h-16 w-16 translate-x-4 -translate-y-4 rounded-full bg-gradient-to-br from-sky-500/10 to-blue-500/5 opacity-60" />
+          <p className="text-[20px] font-semibold tabular-nums text-foreground relative">
+            <AnimatedCounter value={totalEntries} />
           </p>
-          <p className="text-[10px] text-muted-foreground">Avg Productivity</p>
-        </div>
-        <div className="rounded-lg border border-border/40 bg-card/60 px-3 py-2.5">
-          <p className="text-[20px] font-semibold tabular-nums text-foreground">{totalHours}h</p>
-          <p className="text-[10px] text-muted-foreground">Hours Tracked</p>
-        </div>
-      </div>
+          <p className="text-[10px] text-muted-foreground mt-0.5 relative">Total Entries</p>
+        </motion.div>
+        <motion.div
+          variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0, 0, 0.58, 1] } } }}
+          className="relative overflow-hidden rounded-lg border border-border/40 bg-card/60 px-3 py-2.5 transition-all hover:bg-card/85 hover:shadow-[var(--shadow-ambient-sm)]"
+        >
+          <div className="absolute right-0 top-0 h-16 w-16 translate-x-4 -translate-y-4 rounded-full bg-gradient-to-br from-amber-500/10 to-yellow-500/5 opacity-60" />
+          <p className="text-[20px] font-semibold tabular-nums text-foreground relative">
+            {averageRating > 0 ? (
+              <><AnimatedCounter value={averageRating} /><span className="text-[11px] text-muted-foreground">/10</span></>
+            ) : (
+              <span className="text-muted-foreground/60">—</span>
+            )}
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-0.5 relative">Avg Productivity</p>
+        </motion.div>
+        <motion.div
+          variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0, 0, 0.58, 1] } } }}
+          className="relative overflow-hidden rounded-lg border border-border/40 bg-card/60 px-3 py-2.5 transition-all hover:bg-card/85 hover:shadow-[var(--shadow-ambient-sm)]"
+        >
+          <div className="absolute right-0 top-0 h-16 w-16 translate-x-4 -translate-y-4 rounded-full bg-gradient-to-br from-emerald-500/10 to-teal-500/5 opacity-60" />
+          <p className="text-[20px] font-semibold tabular-nums text-foreground relative">
+            <AnimatedCounter value={totalHours} suffix="h" />
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-0.5 relative">Hours Tracked</p>
+        </motion.div>
+      </motion.div>
 
       {/* Filter and Content Panel */}
       <div className="flex flex-col gap-4">

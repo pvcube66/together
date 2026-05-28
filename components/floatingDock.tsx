@@ -86,19 +86,19 @@ function DockIcon({
     useTransform(
       distance,
       [-140, 0, 140],
-      hoverEnabled ? [46, 58, 46] : [42, 42, 42],
+      hoverEnabled ? [46, 60, 46] : [42, 42, 42],
     ),
     {
-      stiffness: 320,
-      damping: 24,
-      mass: 0.35,
+      stiffness: 350,
+      damping: 22,
+      mass: 0.3,
     },
   );
 
-  const y = useSpring(useTransform(distance, [-140, 0, 140], [0, -8, 0]), {
-    stiffness: 320,
-    damping: 24,
-    mass: 0.35,
+  const y = useSpring(useTransform(distance, [-140, 0, 140], [0, -10, 0]), {
+    stiffness: 350,
+    damping: 22,
+    mass: 0.3,
   });
 
   const Icon = item.icon;
@@ -109,9 +109,10 @@ function DockIcon({
       style={{ width: size, height: size, y }}
       whileTap={{ scale: 0.96 }}
       className="group relative flex items-center justify-center rounded-2xl border border-border/60 bg-card/92 text-foreground/75
-        shadow-[var(--shadow-ambient-sm),inset_0_1px_0_rgb(255_255_255/0.42)] backdrop-blur-md transition-[color,background-color,box-shadow] duration-200
-        hover:text-foreground hover:shadow-[var(--shadow-ambient-md),inset_0_1px_0_rgb(255_255_255/0.48)] focus-visible:outline focus-visible:outline-2
-        focus-visible:outline-offset-2 focus-visible:outline-ring/60 dark:shadow-[0_1px_3px_rgb(0_0_0/0.24),0_12px_30px_rgb(0_0_0/0.22),inset_0_1px_0_rgb(255_255_255/0.05)]"
+        shadow-[var(--shadow-ambient-sm),inset_0_1px_0_rgb(255_255_255/0.42)] backdrop-blur-md transition-all duration-200
+        hover:text-foreground hover:shadow-[var(--shadow-ambient-md),inset_0_1px_0_rgb(255_255_255/0.48)] hover:bg-card/98
+        focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring/60
+        dark:shadow-[0_1px_3px_rgb(0_0_0/0.24),0_12px_30px_rgb(0_0_0/0.22),inset_0_1px_0_rgb(255_255_255/0.05)]"
       aria-label={item.label}
       onClick={() => onAction(item)}
     >
@@ -126,7 +127,12 @@ function DockIcon({
       >
         {item.label}
       </span>
-      <Icon size={18} strokeWidth={1.7} className="opacity-85" />
+      <motion.span
+        whileHover={{ rotate: [0, -8, 8, -4, 0] }}
+        transition={{ duration: 0.4, ease: 'easeInOut' }}
+      >
+        <Icon size={18} strokeWidth={1.7} className="opacity-85" />
+      </motion.span>
     </motion.button>
   );
 }

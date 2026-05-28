@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { motion } from 'motion/react';
 import { signIn } from '@/lib/auth-client';
 import LandingCardStack from '@/components/landing-card-stack';
 // No import needed for TestimonialAnimatedTooltip
@@ -166,13 +167,15 @@ function LoginPageContent() {
                           )}
 
                           <div className="flex flex-col gap-2.5">
-                            <button
+                            <motion.button
                               type="button"
+                              whileHover={{ scale: 1.01, boxShadow: '0 0 20px rgba(199,154,122,0.15)' }}
+                              whileTap={{ scale: 0.97 }}
                               onClick={() => void handleSocial('google')}
                               disabled={isPending}
                               className="flex items-center justify-center gap-3 w-full rounded-lg border border-border
                     bg-background hover:bg-accent text-foreground text-sm font-medium h-10 px-4
-                    transition-transform transition-colors duration-150 active:scale-[0.96] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                    transition-colors duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               <svg
                                 width="16"
@@ -200,15 +203,17 @@ function LoginPageContent() {
                               {pendingProvider === 'google'
                                 ? 'Redirecting…'
                                 : 'Continue with Google'}
-                            </button>
+                            </motion.button>
 
-                            <button
+                            <motion.button
                               type="button"
+                              whileHover={{ scale: 1.01, boxShadow: '0 0 20px rgba(199,154,122,0.15)' }}
+                              whileTap={{ scale: 0.97 }}
                               onClick={() => void handleSocial('github')}
                               disabled={isPending}
                               className="flex items-center justify-center gap-3 w-full rounded-lg border border-border
                     bg-background hover:bg-accent text-foreground text-sm font-medium h-10 px-4
-                    transition-transform transition-colors duration-150 active:scale-[0.96] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                    transition-colors duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               <svg
                                 width="16"
@@ -222,7 +227,7 @@ function LoginPageContent() {
                               {pendingProvider === 'github'
                                 ? 'Redirecting…'
                                 : 'Continue with GitHub'}
-                            </button>
+                            </motion.button>
                           </div>
                         </div>
 

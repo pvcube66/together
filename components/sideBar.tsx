@@ -552,24 +552,34 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                           play('tap');
                           if (!lgUp) closeMobileNav();
                         }}
-                        className={
+                                                        className={
                           'flex min-h-[42px] items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-lg px-2.5 py-[9px] ' +
-                          'text-[11.5px] font-medium transition-[background-color,color] duration-150 ' +
+                          'text-[11.5px] font-medium transition-all duration-150 ' +
                           (active
                             ? 'bg-[color:color-mix(in_oklch,var(--color-cta)_14%,white)] text-foreground shadow-[inset_0_0_0_1px_rgba(199,154,122,0.28)] dark:text-[#161925] dark:shadow-[inset_0_0_0_1px_rgba(22,25,37,0.08)]'
-                            : 'text-foreground/70 hover:bg-accent/55 hover:text-foreground')
+                            : 'text-foreground/65 hover:bg-accent/55 hover:text-foreground hover:translate-x-[0.5px]')
                         }
                       >
-                        <item.icon
-                          size={15}
-                          strokeWidth={1.6}
-                          className={
-                            active
-                              ? 'opacity-80 shrink-0'
-                              : 'opacity-55 shrink-0'
-                          }
-                        />
-                        {item.label}
+                                        <div className="relative shrink-0">
+                          {active && (
+                            <motion.span
+                              layoutId="nav-active-dot"
+                              className="absolute -left-1.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full"
+                              style={{ background: 'var(--color-cta)' }}
+                              transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                            />
+                          )}
+                          <item.icon
+                            size={15}
+                            strokeWidth={active ? 2 : 1.6}
+                            className={
+                              active
+                                ? 'opacity-85 shrink-0'
+                                : 'opacity-50 shrink-0'
+                            }
+                          />
+                        </div>
+                        <span className={active ? 'font-semibold' : ''}>{item.label}</span>
                       </Link>
                     </motion.div>
                   );

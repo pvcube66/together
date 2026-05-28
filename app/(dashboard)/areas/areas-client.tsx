@@ -161,11 +161,20 @@ export default function AreasClient({
         </div>
 
         {areas.length === 0 ? (
-          <div className="flex min-h-[18rem] items-center justify-center rounded-2xl border border-dashed border-border/60 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] px-6 text-center">
-            <p className="max-w-md text-[13px] font-medium text-muted-foreground [text-wrap:pretty]">
-              Create areas to organize your work — DSA, Backend, Fitness, Core CS, Aptitude, whatever you're grinding.
-            </p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex min-h-[18rem] items-center justify-center rounded-2xl border border-dashed border-border/60 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] px-6 text-center"
+          >
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50 text-muted-foreground/50">
+                <Layers size={22} strokeWidth={1.2} />
+              </div>
+              <p className="max-w-md text-[13px] font-medium text-muted-foreground [text-wrap:pretty]">
+                Create areas to organize your work — DSA, Backend, Fitness, Core CS, Aptitude, whatever you're grinding.
+              </p>
+            </div>
+          </motion.div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {areas.map((area) => (
@@ -174,7 +183,8 @@ export default function AreasClient({
                 layout
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="relative flex flex-col gap-2 rounded-xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-4"
+                whileHover={{ y: -1 }}
+                className="group relative flex flex-col gap-2 rounded-xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-4 transition-shadow duration-200 hover:shadow-[var(--shadow-ambient-sm)] hover:border-border/60"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5 min-w-0">

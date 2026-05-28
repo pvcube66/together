@@ -2,11 +2,11 @@ import { requireSession } from '@/lib/session';
 import { prisma } from '@/lib/db';
 import { getStudyDayStart, getWeekStart, getMonthStart } from '@/lib/periods';
 import SessionsLoadMore from '@/components/sessions-load-more';
-import { CalendarDays } from 'lucide-react';
 import FriendsPanel, {
   type FriendItem,
 } from '@/components/profile/friends-panel';
 import ProfileHeaderEditor from '@/components/profile/profile-header-editor';
+import { ProfileStats } from '@/components/profile/profile-stats-client';
 import {
   formatMinutesClock,
   formatMinutesCompact,
@@ -261,103 +261,27 @@ export default async function ProfilePage() {
           joinedLabel={new Date(user?.createdAt ?? now).toLocaleDateString()}
         />
 
-        {/* ── User stats (single surface) ── */}
-        <div
-          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
-            shadow-[var(--panel-shadow-inner)]"
-        >
-          <p className="mb-4 text-[12px] font-semibold tracking-tight text-foreground">
-            User stats
-          </p>
-          <div className="grid grid-cols-1 divide-y divide-border/40 rounded-xl border border-border/50 bg-background/75 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-3">
-            {STATS.map(({ label, value }) => (
-              <div key={label} className="px-4 py-3">
-                <p className="text-[10.5px] text-muted-foreground">{label}</p>
-                <p className="mt-0.5 text-[22px] font-semibold tabular-nums tracking-tight text-foreground">
-                  {value}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* ── User stats with animated counters + heatmap ── */}
+        <ProfileStats
+          today={today}
+          thisWeek={thisWeek}
+          thisMonth={thisMonth}
+          lifetime={lifetime}
+          currentStreak={streakRow?.currentStreak ?? 0}
+          longestStreak={streakRow?.longestStreak ?? 0}
+          heatmap={heatmap}
+          heatmapMax={heatmapMax}
+          thirtyFiveDaysAgo={thirtyFiveDaysAgo}
+          last7Days={last7Days}
+          maxMin={maxMin}
+        />
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_1fr]">
-          {/* ── Calendar-style heatmap ── */}
-          <div
-            className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
-              shadow-[var(--panel-shadow-inner)]"
-          >
-            <p className="mb-3 flex items-center gap-2 text-[12px] font-semibold text-foreground">
-              <CalendarDays size={13} />
-              Study calendar
-            </p>
-            <div className="grid grid-cols-7 gap-1.5">
-              {heatmap.map((minutes, i) => {
-                const opacity = Math.max(
-                  0.08,
-                  Math.min(0.95, minutes / heatmapMax),
-                );
-                const date = new Date(
-                  thirtyFiveDaysAgo.getTime() + i * 86_400_000,
-                );
-                const iso = date.toISOString().slice(0, 10);
-                return (
-                  <div
-                    key={i}
-                    title={`${iso}: ${formatMinutesCompact(minutes)} (${formatMinutesClock(minutes)})`}
-                    className="aspect-square rounded-[4px] border border-border/40 bg-cta"
-                    style={{ opacity }}
-                  />
-                );
-              })}
-            </div>
-            <div className="mt-2 grid grid-cols-7 text-center text-[9px] text-muted-foreground">
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(
-                (label) => (
-                  <span key={label}>{label}</span>
-                ),
-              )}
-            </div>
-            <div
-              className="mt-3 flex items-end gap-2"
-              style={{ height: '82px' }}
-            >
-              {last7Days.map(({ date, totalMinutes }) => {
-                const barH = Math.max(
-                  4,
-                  Math.round((totalMinutes / maxMin) * 64),
-                );
-                const dayLabel = new Date(date + 'T12:00:00Z')
-                  .toLocaleDateString(undefined, { weekday: 'short' })
-                  .slice(0, 2);
-                return (
-                  <div
-                    key={date}
-                    className="flex flex-1 flex-col items-center gap-1"
-                  >
-                    <div className="relative flex w-full flex-1 items-end">
-                      <div
-                        className="w-full rounded-sm bg-cta/70 transition-[height] duration-300"
-                        style={{ height: `${barH}px` }}
-                        title={`${date}: ${formatMinutesCompact(totalMinutes)} (${formatMinutesClock(totalMinutes)})`}
-                      />
-                    </div>
-                    <span className="tabular-nums text-[10px] text-muted-foreground">
-                      {dayLabel}
-                    </span>
-                    <span className="tabular-nums text-[9px] text-muted-foreground/85">
-                      {formatMinutesClock(totalMinutes)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
           <FriendsPanel
             initialFriends={initialFriends}
             fallbackNames={collaborators}
           />
+          <div />
         </div>
 
         {/* ── Recent sessions ── */}

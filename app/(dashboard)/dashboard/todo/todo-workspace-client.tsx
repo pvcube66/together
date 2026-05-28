@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { CalendarDays, CheckSquare, Goal, Layers, Pencil, Plus, X } from 'lucide-react';
 import AreaSelector from '@/components/area-selector';
 import { useSound } from '@/components/sound-provider';
+import { AnimatedCounter } from '@/components/animated-counter';
 import type { TaskType } from './page';
 
 type AreaInfo = {
@@ -466,10 +467,12 @@ export default function TodoWorkspaceClient({
             <h1 className="text-[14px] font-semibold tracking-tight text-foreground">
               Todo
             </h1>
-          </div>
-          <span className="text-[11px] tabular-nums text-muted-foreground">
-            {done} / {tasks.length} done
-          </span>
+          </div>            <motion.span
+              className="text-[11px] tabular-nums text-muted-foreground"
+              key={`${done}-${tasks.length}`}
+            >
+              <AnimatedCounter value={done} /> / {tasks.length} done
+            </motion.span>
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -493,17 +496,34 @@ export default function TodoWorkspaceClient({
             </div>
 
             {tasks.length === 0 ? (
-              <div className="flex min-h-[18rem] items-center justify-center px-6 text-center">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex min-h-[18rem] flex-col items-center justify-center px-6 text-center gap-3"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50 text-muted-foreground/40">
+                  <CheckSquare size={22} strokeWidth={1.2} />
+                </div>
                 <p className="max-w-md text-[13px] font-medium text-muted-foreground [text-wrap:pretty]">
                   Scientists agree: writing it down beats overthinking it.
                 </p>
-              </div>
+              </motion.div>
             ) : (
               <div className="space-y-3">
-                {tasks.map((task) => (
+                {tasks.map((task) => {
+                  const taskVariants = {
+                    hidden: { opacity: 0, y: 8, scale: 0.98 },
+                    visible: { opacity: 1, y: 0, scale: 1 },
+                  };
+                  return (
                   <motion.div
                     key={task.id}
-                    className="relative flex min-h-[6rem] items-start gap-2 rounded-xl border border-border/50 bg-background/85 px-3 py-3"
+                    layout
+                    variants={taskVariants}
+                    initial="hidden"
+                    animate="visible"
+                    whileHover={{ y: -1 }}
+                    className="relative flex min-h-[6rem] items-start gap-2 rounded-xl border border-border/50 bg-background/85 px-3 py-3 transition-shadow duration-200 hover:shadow-[var(--shadow-ambient-sm)]"
                   >
                     <motion.button
                       type="button"
@@ -609,7 +629,7 @@ export default function TodoWorkspaceClient({
                       )}
                     </AnimatePresence>
                   </motion.div>
-                ))}
+                );})}
               </div>
             )}
           </div>

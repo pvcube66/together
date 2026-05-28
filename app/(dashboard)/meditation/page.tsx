@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Wind, Timer, Sparkles } from 'lucide-react';
+import { Wind, Timer, Sparkles, Flower2 } from 'lucide-react';
 import BreathingExercise from '@/components/meditation/breathing-exercise';
 import MeditationTimer from '@/components/meditation/meditation-timer';
 
@@ -15,26 +15,37 @@ export default function MeditationPage() {
     <div className="relative flex min-h-0 w-full flex-col overflow-hidden">
       {/* Calm background gradient */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-        <div className="absolute -top-24 right-[10%] h-[400px] w-[400px] rounded-full bg-gradient-to-br from-sky-500/6 to-blue-500/4 blur-3xl" />
-        <div className="absolute -bottom-32 left-[5%] h-[350px] w-[350px] rounded-full bg-gradient-to-tr from-violet-500/5 to-purple-500/3 blur-3xl" />
+        <div className="absolute -top-24 right-[10%] h-[400px] w-[400px] rounded-full bg-gradient-to-br from-sky-500/6 to-blue-500/4 blur-3xl animate-pulse" style={{ animationDuration: '6s' }} />
+        <div className="absolute -bottom-32 left-[5%] h-[350px] w-[350px] rounded-full bg-gradient-to-tr from-violet-500/5 to-purple-500/3 blur-3xl animate-pulse" style={{ animationDuration: '8s', animationDelay: '1s' }} />
+        <div className="absolute top-[40%] left-[40%] h-[200px] w-[200px] rounded-full bg-gradient-to-r from-amber-500/4 to-rose-500/3 blur-3xl animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
       </div>
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col px-4 pb-4 pt-6 sm:px-6 sm:pb-6 sm:pt-8 md:px-8 md:pb-8 md:pt-10">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0, 0, 0.58, 1] }}
+          className="mb-6 flex items-center justify-between"
+        >
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Sparkles size={14} className="text-sky-500" />
+              <Flower2 size={15} className="text-sky-500" />
               <h1 className="text-[14px] font-bold tracking-tight text-foreground">Meditation</h1>
             </div>
             <p className="text-[11px] text-muted-foreground/70">
               Find calm and focus — guided breathing and timed sessions
             </p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Tab selector */}
-        <div className="mb-6 flex gap-1.5 rounded-xl border border-border/30 bg-muted/40 p-1 w-fit">
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0, 0, 0.58, 1], delay: 0.1 }}
+          className="mb-6 flex gap-1.5 rounded-xl border border-border/30 bg-muted/40 p-1 w-fit"
+        >
           <motion.button
             type="button"
             whileTap={{ scale: 0.97 }}
@@ -75,7 +86,7 @@ export default function MeditationPage() {
             <Wind size={13} strokeWidth={1.6} className="relative z-10" />
             <span className="relative z-10">Breathing exercises</span>
           </motion.button>
-        </div>
+        </motion.div>
 
         {/* Content */}
         <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-border/30 bg-card/50 p-4 backdrop-blur-sm sm:p-6">

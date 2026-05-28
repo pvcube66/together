@@ -2,7 +2,7 @@
 
 import { Coffee, Menu, Play, Square } from 'lucide-react';
 import { useServerUserSettings } from '@/components/server-user-settings';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useMobileNav } from '@/components/mobile-nav-context';
 import { useSound } from '@/components/sound-provider';
 import { useStudyTimer } from '@/components/study-timer-provider';
@@ -87,31 +87,69 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
             play('tap');
             void toggle();
           }}
-          className="flex h-10 min-h-[40px] w-10 min-w-[40px] items-center justify-center rounded-xl border-0 bg-transparent text-foreground/80 shadow-none [box-shadow:none] transition-colors hover:bg-muted/50 disabled:opacity-45"
+          className="relative flex h-10 min-h-[40px] w-10 min-w-[40px] items-center justify-center rounded-xl border-0 bg-transparent text-foreground/80 shadow-none [box-shadow:none] transition-colors hover:bg-muted/50 disabled:opacity-45"
         >
-          {active ? (
-            <Square size={16} strokeWidth={2} fill="currentColor" />
-          ) : (
-            <Play size={16} strokeWidth={1.8} className="translate-x-[0.5px]" />
+          {active && (
+            <motion.span
+              className="absolute inset-0 rounded-xl border-2 border-cta/40"
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, ease: [0, 0, 0.58, 1] }}
+            />
           )}
+          <motion.span
+            animate={active ? { scale: [1, 1.08, 1] } : { scale: 1 }}
+            transition={active ? { repeat: Infinity, duration: 1.2, ease: 'easeInOut' } : { duration: 0.2 }}
+            className="relative flex items-center justify-center"
+          >
+            <AnimatePresence mode="wait">
+              {active ? (
+                <motion.span
+                  key="stop"
+                  initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
+                  transition={{ duration: 0.18, ease: [0, 0, 0.58, 1] }}
+                >
+                  <Square size={16} strokeWidth={2} fill="currentColor" />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="play"
+                  initial={{ opacity: 0, scale: 0.5, rotate: 90 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, rotate: -90 }}
+                  transition={{ duration: 0.18, ease: [0, 0, 0.58, 1] }}
+                >
+                  <Play size={16} strokeWidth={1.8} className="translate-x-[0.5px]" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.span>
         </motion.button>
 
         {/* Pomodoro break indicator */}
         {pomodoroPhase === 'break' && (
           <motion.button
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+            initial={{ scale: 0.8, opacity: 0, y: 4 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.8, opacity: 0, y: -4 }}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.94 }}
             onClick={() => skipBreak()}
             title={`Break: ${Math.floor(pomodoroSecondsRemaining / 60)}:${String(pomodoroSecondsRemaining % 60).padStart(2, '0')} — Click to skip`}
             aria-label={`Break time — ${Math.floor(pomodoroSecondsRemaining / 60)} minutes remaining. Click to skip.`}
-            className="flex h-10 min-h-[40px] items-center gap-1 rounded-xl border border-amber-200/60 bg-amber-50/80 px-2.5 text-amber-700 dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-300"
+            className="flex h-10 min-h-[40px] items-center gap-1.5 rounded-xl border border-amber-200/60 bg-amber-50/80 px-3 text-amber-700 shadow-sm transition-colors dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-300 dark:shadow-amber-950/20"
           >
-            <Coffee size={14} strokeWidth={1.7} />
-            <span className="tabular-nums text-[11px] font-medium">
+            <Coffee size={14} strokeWidth={1.7} className="shrink-0" />
+            <motion.span
+              className="tabular-nums text-[11px] font-medium"
+              key={Math.floor(pomodoroSecondsRemaining / 60) * 60 + (pomodoroSecondsRemaining % 60)}
+            >
               {Math.floor(pomodoroSecondsRemaining / 60)}:{String(pomodoroSecondsRemaining % 60).padStart(2, '0')}
-            </span>
+            </motion.span>
             {pomodoroCycleCount > 0 && (
-              <span className="ml-0.5 text-[10px] opacity-60">#{pomodoroCycleCount}</span>
+              <span className="-ml-0.5 text-[10px] font-semibold opacity-50 tabular-nums">#{pomodoroCycleCount}</span>
             )}
           </motion.button>
         )}

@@ -121,7 +121,7 @@ export default function ReviewClient({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.03, duration: 0.3, ease: [0.2, 0, 0, 1] }}
-        className="group relative overflow-hidden rounded-xl border border-border/45 bg-card/40 p-4 transition-all duration-200 hover:bg-card/75"
+        className="group relative overflow-hidden rounded-xl border border-border/45 bg-card/40 p-4 transition-all duration-200 hover:bg-card/75 hover:shadow-[var(--shadow-ambient-sm)] hover:-translate-y-0.5"
       >
         <div className="absolute right-0 top-0 h-16 w-16 translate-x-4 -translate-y-4 rounded-full opacity-[0.03]"
           style={{ background: `radial-gradient(circle, ${color}, transparent)` }}
@@ -157,7 +157,10 @@ export default function ReviewClient({
     color: string;
   }) {
     return (
-      <div className="flex items-center justify-between rounded-lg border border-border/40 bg-card/30 p-3 hover:bg-card/50 transition-colors">
+      <motion.div
+      whileHover={{ x: 2 }}
+      className="flex items-center justify-between rounded-lg border border-border/40 bg-card/30 p-3 hover:bg-card/50 transition-[background-color,box-shadow] duration-200 hover:shadow-[var(--shadow-ambient-sm)]"
+    >
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs" style={{ background: `${color}15`, color }}>
             {icon}
@@ -168,7 +171,7 @@ export default function ReviewClient({
           </div>
         </div>
         <p className="text-[13px] font-bold tabular-nums text-foreground shrink-0 pl-2">{value}</p>
-      </div>
+      </motion.div>
     );
   }
 
