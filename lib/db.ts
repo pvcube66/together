@@ -26,7 +26,7 @@ function getPrismaInstance(): PrismaClient {
       },
     });
 
-    const adapter = new PrismaPg(pool as any);
+    const adapter = new PrismaPg(pool as any); // PrismaPg expects pg.Pool, keep cast for type compat
     prismaInstance = new PrismaClient({ adapter });
   }
   return prismaInstance;

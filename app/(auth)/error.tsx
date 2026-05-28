@@ -15,7 +15,7 @@ export default function AuthError({
         <button
           type="button"
           onClick={reset}
-          className="rounded-md border border-border bg-card px-4 py-2 text-sm font-medium"
+          className="rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-ambient-sm transition-colors hover:bg-accent/60"
         >
           Retry
         </button>

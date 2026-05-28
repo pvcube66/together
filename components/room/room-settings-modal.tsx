@@ -153,7 +153,7 @@ export default function RoomSettingsModal({
                   className={
                     'order-1 inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[11.5px] font-medium transition-[transform,opacity] duration-150 sm:order-2 ' +
                     (confirmDelete
-                      ? 'bg-destructive text-destructive-foreground shadow-[0_1px_3px_rgba(127,29,29,0.25)] hover:bg-destructive/90 active:scale-[0.98] disabled:opacity-50'
+                      ? 'bg-destructive text-destructive-foreground shadow-[0_1px_3px_rgba(127,29,29,0.25)] hover:bg-destructive/90 active:scale-[0.98] disabled:opacity-50 dark:shadow-[0_1px_3px_rgba(127,29,29,0.5)]'
                       : 'border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/15 active:scale-[0.98] disabled:opacity-50')
                   }
                 >

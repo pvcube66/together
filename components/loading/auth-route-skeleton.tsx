@@ -5,7 +5,7 @@ export default function AuthRouteSkeleton() {
   return (
     <GlassLoadingShell className="min-h-[min(100dvh,40rem)]">
       <div className="flex min-h-[min(100dvh,40rem)] items-center justify-center p-6">
-        <div className="app-shimmer-block w-full max-w-[22rem] space-y-5 rounded-2xl border border-border/45 bg-card/70 p-8 shadow-[0_8px_40px_rgba(17,24,39,0.08)] ring-1 ring-border/25">
+        <div className="app-shimmer-block w-full max-w-[22rem] space-y-5 rounded-2xl border border-border/45 bg-card/70 p-8 shadow-[var(--panel-shadow-modal)] ring-1 ring-border/25">
           <div className="space-y-2 text-center">
             <div className="mx-auto h-4 w-32 rounded-md bg-muted/50" />
             <div className="mx-auto h-2.5 w-48 max-w-full rounded bg-muted/35" />

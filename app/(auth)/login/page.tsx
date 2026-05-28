@@ -68,10 +68,10 @@ function LoginPageContent() {
   const isPending = pendingProvider !== null;
 
   return (
-    <div className="box-border flex min-h-dvh w-full max-w-[100vw] flex-col overflow-x-hidden bg-[#f7f5f2] p-3 sm:p-4">
-      <div className="flex min-h-0 w-full max-w-full flex-1 flex-col rounded-[30px] border border-black/[0.07] bg-[#eae8e4] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),inset_0_0_0_1px_rgba(0,0,0,0.028),0_18px_48px_rgba(22,25,37,0.06)]">
+    <div className="box-border flex min-h-dvh w-full max-w-[100vw] flex-col overflow-x-hidden bg-[#f7f5f2] p-3 dark:bg-[var(--background)] sm:p-4">
+      <div className="flex min-h-0 w-full max-w-full flex-1 flex-col rounded-[30px] border border-black/[0.07] bg-[#eae8e4] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),inset_0_0_0_1px_rgba(0,0,0,0.028),0_18px_48px_rgba(22,25,37,0.06)] dark:border-white/[0.1] dark:bg-[var(--panel-texture-bg)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(255,255,255,0.045),0_18px_48px_rgba(0,0,0,0.3)]">
         <div
-          className="flex min-h-0 flex-1 flex-col rounded-[22px] border border-black/[0.05] p-3 sm:p-4 md:min-h-0"
+          className="flex min-h-0 flex-1 flex-col rounded-[22px] border border-black/[0.05] p-3 sm:p-4 dark:border-white/[0.08] md:min-h-0"
           style={{
             backgroundColor: '#f2f0ec',
             /* First = paint order top: hatches must sit above washes or lines disappear */
@@ -82,8 +82,9 @@ function LoginPageContent() {
               radial-gradient(ellipse 70% 55% at 14% 88%, rgba(22,25,37,0.024) 0%, transparent 48%)
             `,
           }}
+          data-dark-mode-style="true"
         >
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[18px] border border-black/[0.045] bg-[#ffffff] p-2 shadow-[0_24px_70px_rgba(22,25,37,0.052),0_2px_0_rgba(255,255,255,1)_inset]">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[18px] border border-black/[0.045] bg-[#ffffff] p-2 shadow-[0_24px_70px_rgba(22,25,37,0.052),0_2px_0_rgba(255,255,255,1)_inset] dark:border-white/[0.08] dark:bg-[var(--card)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.3),0_1px_0_rgba(255,255,255,0.06)_inset]">
             {/* Sectional tonal zones — warm left / cooler right, subconscious */}
             <div
               className="pointer-events-none absolute inset-0 rounded-[18px] opacity-[0.72]"
@@ -132,20 +133,20 @@ function LoginPageContent() {
                       {/* Left: Auth — single vertical rhythm: intro → card → social proof */}
                       <div className="flex max-w-sm flex-col">
                         <div className="flex flex-col gap-3">
-                          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-black/[0.07] bg-[#faf9f7] px-3 py-1 text-[11px] text-neutral-600 shadow-[0_3px_14px_rgba(22,25,37,0.05)]">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#C79A7A]" />
+                          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-black/[0.07] bg-[#faf9f7] px-3 py-1 text-[11px] text-neutral-600 shadow-[0_3px_14px_rgba(22,25,37,0.05)] dark:border-white/[0.12] dark:bg-[var(--muted)] dark:text-muted-foreground dark:shadow-[0_3px_14px_rgba(0,0,0,0.25)]">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#C79A7A] dark:bg-[var(--cta)]" />
                             Focused live rooms
                           </div>
-                          <p className="text-[13px] font-medium text-neutral-700">
+                          <p className="text-[13px] font-medium text-neutral-700 dark:text-foreground/85">
                             Study together in calm, real-time sessions
                           </p>
-                          <p className="text-sm leading-relaxed text-neutral-400">
+                          <p className="text-sm leading-relaxed text-neutral-400 dark:text-muted-foreground/70">
                             Continue with your provider to access rooms, timers,
                             and live study sessions.
                           </p>
                         </div>
 
-                        <div className="mt-6 rounded-2xl border border-black/[0.045] bg-[#ffffff] p-6 shadow-[0_4px_44px_rgba(22,25,37,0.042),0_14px_48px_rgba(22,25,37,0.028)]">
+                        <div className="mt-6 rounded-2xl border border-black/[0.045] bg-[#ffffff] p-6 shadow-[0_4px_44px_rgba(22,25,37,0.042),0_14px_48px_rgba(22,25,37,0.028)] dark:border-white/[0.08] dark:bg-[var(--card)] dark:shadow-[var(--panel-shadow-modal)]">
                           <div className="flex flex-col gap-1 mb-5">
                             <h1 className="text-lg font-semibold text-foreground">
                               Sign in to Together
@@ -230,7 +231,7 @@ function LoginPageContent() {
 
                       {/* Right: cooler tonal pad + ambient glow / bloom */}
                       <div className="min-w-0 max-w-[100%] pb-8 md:pb-0">
-                        <div className="relative mx-auto w-full min-w-0 max-w-[54rem] rounded-[22px] bg-gradient-to-br from-[#f9fafb]/88 via-[#f7f8fa]/55 to-[#f4f6f9]/72 px-2 py-4 ring-1 ring-black/[0.025] sm:px-6 md:px-8 md:from-[#f8fafc]/82 md:via-[#f6f8fb]/48 md:to-[#f3f6f9]/68">
+                        <div className="relative mx-auto w-full min-w-0 max-w-[54rem] rounded-[22px] bg-gradient-to-br from-[#f9fafb]/88 via-[#f7f8fa]/55 to-[#f4f6f9]/72 px-2 py-4 ring-1 ring-black/[0.025] sm:px-6 md:px-8 dark:from-[var(--card)]/60 dark:via-[var(--card)]/40 dark:to-[var(--card)]/30 dark:ring-white/[0.05] md:from-[#f8fafc]/82 md:via-[#f6f8fb]/48 md:to-[#f3f6f9]/68">
                           <div
                             className="pointer-events-none absolute left-[52%] top-[42%] z-0 h-[min(420px,82vh)] w-[min(520px,96%)] -translate-x-1/2 -translate-y-1/2 opacity-[0.75]"
                             aria-hidden
@@ -276,7 +277,7 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#f7f5f2]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#f7f5f2] dark:bg-[var(--background)]" />}>
       <LoginPageContent />
     </Suspense>
   );

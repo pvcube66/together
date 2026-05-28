@@ -13,7 +13,7 @@ import {
   VideoOff,
   X,
 } from 'lucide-react';
-import { connectWithAuth } from '@/lib/socket';
+import { connectWithAuth, type StudySocket } from '@/lib/socket';
 import { useStudyTimer } from '@/components/study-timer-provider';
 import { useSound } from '@/components/sound-provider';
 import { mergeSelfStudyTimer } from '@/lib/timer-sync';
@@ -146,7 +146,7 @@ export default function RoomClient({
   }, [play, selfCamOn, startVideo, stopVideo]);
 
   useEffect(() => {
-    let socket: any = null;
+    let socket: StudySocket | null = null;
     let keepAliveId: ReturnType<typeof setInterval>;
 
     const clearRefreshTimers = () => {
@@ -178,27 +178,27 @@ export default function RoomClient({
     };
 
     connectWithAuth().then((s) => {
+      if (!s) return;
       socket = s;
-      if (!socket) return;
 
       const queuePresenceRefreshBurst = () => {
         clearRefreshTimers();
         const delays = [120, 450, 1100];
         refreshTimerRefs.current = delays.map((ms) =>
           setTimeout(() => {
-            if (socket.connected) socket.emit('presence:refresh');
+            if (s.connected) s.emit('presence:refresh');
           }, ms),
         );
       };
 
       const joinRoom = () => {
-        socket.emit(
+        s.emit(
           'room:join',
           { roomId },
           (response: { ok: boolean; error?: string }) => {
             if (response.ok) {
               queuePresenceRefreshBurst();
-            } else {
+            } else if (process.env.NODE_ENV !== 'production') {
               console.error('Room join failed:', response.error);
             }
           },
@@ -211,12 +211,12 @@ export default function RoomClient({
         joinRoom();
       };
 
-      socket.on('presence', onPresence);
-      socket.on('room:kicked', onKicked);
-      socket.on('connect', onConnect);
+      s.on('presence', onPresence);
+      s.on('room:kicked', onKicked);
+      s.on('connect', onConnect);
 
       keepAliveId = setInterval(() => {
-        if (socket.connected) socket.emit('presence:refresh');
+        if (s.connected) s.emit('presence:refresh');
       }, 15_000);
     });
 
@@ -334,7 +334,7 @@ export default function RoomClient({
                 play('tap');
                 setSettingsOpen(true);
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/60 bg-card/80 text-foreground/90 shadow-[0_1px_2px_rgba(17,24,39,0.04)] transition-colors hover:bg-accent/60"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/60 bg-card/80 text-foreground/90 shadow-[var(--panel-shadow-sm)] transition-colors hover:bg-accent/60"
               aria-label="Room settings"
             >
               <Settings size={16} strokeWidth={1.65} />

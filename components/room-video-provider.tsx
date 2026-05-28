@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { connectWithAuth } from '@/lib/socket';
+import { connectWithAuth, type StudySocket } from '@/lib/socket';
 
 type RoomVideoView = {
   videoEnabled: boolean;
@@ -313,35 +313,41 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
             remoteStreams: { ...prev.remoteStreams, [peerId]: stream },
           };
         });
-      };
-
-      peer.onconnectionstatechange = () => {
-        console.log(
-          `[WebRTC] Peer ${peerId} connection state:`,
-          peer.connectionState,
-        );
+      };          peer.onconnectionstatechange = () => {
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(
+            `[WebRTC] Peer ${peerId} connection state:`,
+            peer.connectionState,
+          );
+        }
         if (
           peer.connectionState === 'failed' ||
           peer.connectionState === 'closed' ||
           peer.connectionState === 'disconnected'
         ) {
-          console.warn(
-            `[WebRTC] Closing peer ${peerId} due to:`,
-            peer.connectionState,
-          );
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn(
+              `[WebRTC] Closing peer ${peerId} due to:`,
+              peer.connectionState,
+            );
+          }
           closePeer(roomId, peerId);
         }
       };
 
       peer.oniceconnectionstatechange = () => {
-        console.log(
-          `[WebRTC] Peer ${peerId} ICE state:`,
-          peer.iceConnectionState,
-        );
-        if (peer.iceConnectionState === 'failed') {
-          console.error(
-            `[WebRTC] ICE connection failed for peer ${peerId}. May need TURN server.`,
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(
+            `[WebRTC] Peer ${peerId} ICE state:`,
+            peer.iceConnectionState,
           );
+        }
+        if (peer.iceConnectionState === 'failed') {
+          if (process.env.NODE_ENV !== 'production') {
+            console.error(
+              `[WebRTC] ICE connection failed for peer ${peerId}. May need TURN server.`,
+            );
+          }
         }
       };
 
@@ -359,7 +365,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      console.log('[Video] Syncing video peers for room:', roomId);
+      if (process.env.NODE_ENV !== 'production') console.log('[Video] Syncing video peers for room:', roomId);
       runtime.syncInFlight = true;
       const run = async () => {
         try {
@@ -368,14 +374,14 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
             const socket = await connectWithAuth();
             if (!socket) return;
 
-            console.log('[Video] Emitting media:join for room:', roomId);
+            if (process.env.NODE_ENV !== 'production') console.log('[Video] Emitting media:join for room:', roomId);
             const joined = await new Promise<{
               ok: boolean;
               peers?: string[];
               error?: string;
             }>((resolve) => {
               const timeout = window.setTimeout(() => {
-                console.error('[Video] media:join timeout');
+                if (process.env.NODE_ENV !== 'production') console.error('[Video] media:join timeout');
                 resolve({ ok: false, error: 'socket_timeout' });
               }, 8_000);
               socket.emit(
@@ -387,7 +393,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
                   error?: string;
                 }) => {
                   window.clearTimeout(timeout);
-                  console.log('[Video] media:join response:', response);
+                  if (process.env.NODE_ENV !== 'production') console.log('[Video] media:join response:', response);
                   resolve(response);
                 },
               );
@@ -496,7 +502,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
 
   const enableRoomVideo = useCallback(
     async (roomId: string) => {
-      console.log('[Video] Starting video for room:', roomId);
+      if (process.env.NODE_ENV !== 'production') console.log('[Video] Starting video for room:', roomId);
       patchRoomView(roomId, (prev) => ({
         ...prev,
         starting: true,
@@ -505,13 +511,13 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
 
       try {
         // CRITICAL: Wait for room join to complete before enabling video
-        console.log('[Video] Ensuring room is joined...');
+        if (process.env.NODE_ENV !== 'production') console.log('[Video] Ensuring room is joined...');
         const joinResult = await ensureRoomJoined(roomId);
         if (!joinResult.ok) {
-          console.error('[Video] Room join failed:', joinResult.error);
+          if (process.env.NODE_ENV !== 'production') console.error('[Video] Room join failed:', joinResult.error);
           throw new Error(`Room join failed: ${joinResult.error || 'unknown'}`);
         }
-        console.log('[Video] Room joined successfully');
+        if (process.env.NODE_ENV !== 'production') console.log('[Video] Room joined successfully');
 
         await ensureLocalStream();
         const socket = await connectWithAuth();
@@ -535,7 +541,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
         );
 
         if (!allowed.ok) {
-          console.error('[Video] Video state request failed:', allowed.error);
+          if (process.env.NODE_ENV !== 'production') console.error('[Video] Video state request failed:', allowed.error);
           throw new Error(
             allowed.error === 'video_room_full'
               ? 'Room video is full.'
@@ -546,7 +552,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
                   : 'Could not start video.',
           );
         }
-        console.log('[Video] Video state enabled successfully');
+        if (process.env.NODE_ENV !== 'production') console.log('[Video] Video state enabled successfully');
 
         patchRoomView(roomId, (prev) => ({
           ...prev,
@@ -557,7 +563,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
         closeAllPeers(roomId);
         syncRoomVideoPeers(roomId);
       } catch (error) {
-        console.error('[Video] Failed to enable video:', error);
+        if (process.env.NODE_ENV !== 'production') console.error('[Video] Failed to enable video:', error);
         patchRoomView(roomId, (prev) => ({
           ...prev,
           starting: false,
@@ -582,7 +588,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    let socket: any = null;
+    let socket: StudySocket | null = null;
  
     const onPresence = (payload: {
       roomId: string;
@@ -605,10 +611,10 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
       fromUserId: string;
       description: RTCSessionDescriptionInit;
     }) => {
-      console.log('[WebRTC] Received offer from:', payload.fromUserId);
+      if (process.env.NODE_ENV !== 'production') console.log('[WebRTC] Received offer from:', payload.fromUserId);
       const runtime = roomRefs.current.get(payload.roomId);
       if (!runtime || !shouldRemainJoined(runtime)) {
-        console.warn('[WebRTC] Ignoring offer - room not active');
+        if (process.env.NODE_ENV !== 'production') console.warn('[WebRTC] Ignoring offer - room not active');
         return;
       }
       const peer = createPeer(payload.roomId, payload.fromUserId);
@@ -616,7 +622,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
       await addPendingCandidates(payload.roomId, payload.fromUserId, peer);
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
-      console.log('[WebRTC] Sending answer to:', payload.fromUserId);
+      if (process.env.NODE_ENV !== 'production') console.log('[WebRTC] Sending answer to:', payload.fromUserId);
       if (socket) {
         socket.emit('media:answer', {
           roomId: payload.roomId,
@@ -631,16 +637,16 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
       fromUserId: string;
       description: RTCSessionDescriptionInit;
     }) => {
-      console.log('[WebRTC] Received answer from:', payload.fromUserId);
+      if (process.env.NODE_ENV !== 'production') console.log('[WebRTC] Received answer from:', payload.fromUserId);
       const runtime = roomRefs.current.get(payload.roomId);
       const peer = runtime?.peers.get(payload.fromUserId);
       if (!runtime || !peer) {
-        console.warn('[WebRTC] Ignoring answer - no peer found');
+        if (process.env.NODE_ENV !== 'production') console.warn('[WebRTC] Ignoring answer - no peer found');
         return;
       }
       await peer.setRemoteDescription(payload.description);
       await addPendingCandidates(payload.roomId, payload.fromUserId, peer);
-      console.log('[WebRTC] Answer processed for:', payload.fromUserId);
+      if (process.env.NODE_ENV !== 'production') console.log('[WebRTC] Answer processed for:', payload.fromUserId);
     };
  
     const onIce = async (payload: {
@@ -678,10 +684,12 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
         void (async () => {
           const joinResult = await ensureRoomJoined(roomId);
           if (!joinResult.ok) {
-            console.error(
-              'Failed to rejoin room on reconnect:',
-              joinResult.error,
-            );
+            if (process.env.NODE_ENV !== 'production') {
+              console.error(
+                'Failed to rejoin room on reconnect:',
+                joinResult.error,
+              );
+            }
             return;
           }
  

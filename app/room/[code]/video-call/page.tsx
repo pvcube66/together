@@ -64,21 +64,21 @@ export default async function RoomVideoCallPage({
 
         <div className="pointer-events-none absolute bottom-5 left-0 right-0 flex justify-center">
           <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-border/40 bg-background/85 px-3 py-2 backdrop-blur-md">
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/70 text-foreground hover:bg-muted">
+            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/70 text-foreground hover:bg-muted" aria-label="Toggle microphone">
               <Mic size={16} />
             </button>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/70 text-foreground hover:bg-muted">
+            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/70 text-foreground hover:bg-muted" aria-label="Toggle camera">
               <Video size={16} />
             </button>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/70 text-foreground hover:bg-muted">
+            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/70 text-foreground hover:bg-muted" aria-label="Mute microphone">
               <MicOff size={16} />
             </button>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/70 text-foreground hover:bg-muted">
+            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/70 text-foreground hover:bg-muted" aria-label="Turn camera off">
               <VideoOff size={16} />
             </button>
             <Link
               href={`/room/${room.code}`}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive text-destructive-foreground" aria-label="Leave call"
             >
               <PhoneOff size={16} />
             </Link>
