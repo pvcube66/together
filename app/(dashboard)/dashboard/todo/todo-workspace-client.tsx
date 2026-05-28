@@ -655,40 +655,50 @@ export default function TodoWorkspaceClient({
                 <Goal size={12} />
                 Goal configuration
               </p>
-              <label className="mb-3 block text-[10.5px] text-muted-foreground">
-                Weekly focus goals
-                <input
-                  type="range"
-                  min={1}
-                  max={30}
-                  value={weeklyGoal}
-                  onChange={(e) => {
-                    setWeeklyGoal(Number(e.target.value));
-                    play('tap');
-                  }}
-                  className="mt-1 w-full"
-                />
-                <span className="tabular-nums text-[12px] text-foreground">
-                  {weeklyGoal} tasks/week
-                </span>
-              </label>
-              <label className="block text-[10.5px] text-muted-foreground">
-                Monthly focus goals
-                <input
-                  type="range"
-                  min={5}
-                  max={100}
-                  value={monthlyGoal}
-                  onChange={(e) => {
-                    setMonthlyGoal(Number(e.target.value));
-                    play('tap');
-                  }}
-                  className="mt-1 w-full"
-                />
-                <span className="tabular-nums text-[12px] text-foreground">
-                  {monthlyGoal} tasks/month
-                </span>
-              </label>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1 block text-[10.5px] font-medium text-muted-foreground">
+                    Weekly focus goals
+                  </span>
+                  <div className="relative flex items-center">
+                    <input
+                      type="number"
+                      min={1}
+                      value={weeklyGoal}
+                      onChange={(e) => {
+                        const val = Math.max(1, Math.floor(Number(e.target.value)));
+                        setWeeklyGoal(val);
+                        play('tap');
+                      }}
+                      className="w-full rounded-md border border-border/70 bg-background pl-3 pr-22 py-2 text-[13px] font-medium text-foreground tabular-nums focus:outline-none"
+                    />
+                    <span className="absolute right-3 text-[11px] font-medium text-muted-foreground pointer-events-none">
+                      tasks/week
+                    </span>
+                  </div>
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[10.5px] font-medium text-muted-foreground">
+                    Monthly focus goals
+                  </span>
+                  <div className="relative flex items-center">
+                    <input
+                      type="number"
+                      min={1}
+                      value={monthlyGoal}
+                      onChange={(e) => {
+                        const val = Math.max(1, Math.floor(Number(e.target.value)));
+                        setMonthlyGoal(val);
+                        play('tap');
+                      }}
+                      className="w-full rounded-md border border-border/70 bg-background pl-3 pr-22 py-2 text-[13px] font-medium text-foreground tabular-nums focus:outline-none"
+                    />
+                    <span className="absolute right-3 text-[11px] font-medium text-muted-foreground pointer-events-none">
+                      tasks/month
+                    </span>
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
         </div>
