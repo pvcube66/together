@@ -62,18 +62,6 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: "/home", destination: "/dashboard", permanent: true }];
   },
-
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.performance = {
-        ...config.performance,
-        hints: "warning",
-        maxEntrypointSize: 300000,
-        maxAssetSize: 300000,
-      };
-    }
-    return config;
-  },
 };
 
 export default bundleAnalyzer(nextConfig);
