@@ -126,9 +126,8 @@ export default function ProfileHeaderEditor({
 
   return (
     <>
-      <div
-        className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] grid grid-cols-[1fr_auto] gap-4 rounded-2xl border border-border/50 p-5
-          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+      <div          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] grid grid-cols-[1fr_auto] gap-4 rounded-2xl border border-border/50 p-5
+          shadow-[var(--panel-shadow-inner)]"
       >
         <div className="flex items-center gap-4">
           <AvatarWithFallback
@@ -202,7 +201,7 @@ export default function ProfileHeaderEditor({
               exit={{ y: 8, opacity: 0, scale: 0.985 }}
               transition={{ duration: 0.2, ease: [0, 0, 0.58, 1] }}
               className="relative z-10 my-auto w-full max-w-md rounded-xl border border-border/60 bg-card p-4 sm:my-0
-                shadow-[0_1px_2px_rgba(17,24,39,0.06),0_18px_40px_rgba(17,24,39,0.12)]"
+                shadow-[var(--panel-shadow-modal)]"
             >
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-[13px] font-semibold text-foreground">

@@ -264,7 +264,7 @@ export default async function ProfilePage() {
         {/* ── User stats (single surface) ── */}
         <div
           className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
-            shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+            shadow-[var(--panel-shadow-inner)]"
         >
           <p className="mb-4 text-[12px] font-semibold tracking-tight text-foreground">
             User stats
@@ -285,7 +285,7 @@ export default async function ProfilePage() {
           {/* ── Calendar-style heatmap ── */}
           <div
             className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
-              shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+              shadow-[var(--panel-shadow-inner)]"
           >
             <p className="mb-3 flex items-center gap-2 text-[12px] font-semibold text-foreground">
               <CalendarDays size={13} />
@@ -363,7 +363,7 @@ export default async function ProfilePage() {
         {/* ── Recent sessions ── */}
         <div
           className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
-            shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+            shadow-[var(--panel-shadow-inner)]"
         >
           <p className="mb-4 text-[12px] font-semibold text-foreground">
             Recent sessions

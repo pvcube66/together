@@ -326,7 +326,7 @@ function LogsDashboard({
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 8, opacity: 0, scale: 0.985 }}
               transition={{ duration: 0.2, ease: [0, 0, 0.58, 1] }}
-              className="relative z-10 my-auto w-full max-w-lg rounded-xl border border-border/60 bg-card p-4 shadow-[0_1px_2px_rgba(17,24,39,0.06),0_18px_40px_rgba(17,24,39,0.12)]"
+              className="relative z-10 my-auto w-full max-w-lg rounded-xl border border-border/60 bg-card p-4 shadow-[var(--panel-shadow-modal)]"
             >
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-[13px] font-semibold text-foreground">

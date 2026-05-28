@@ -271,7 +271,7 @@ export default function SettingsClient({
 
         <div
           className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
-          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+          shadow-[var(--panel-shadow-inner)]"
         >
           <div className="flex items-start justify-between gap-3 border-b border-border/50 pb-4">
             <div className="flex items-start gap-3">
@@ -441,7 +441,7 @@ export default function SettingsClient({
 
         <div
           className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
-          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+          shadow-[var(--panel-shadow-inner)]"
         >
           <SectionHeader
             icon={Settings}
@@ -495,7 +495,7 @@ export default function SettingsClient({
 
         <div
           className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
-          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+          shadow-[var(--panel-shadow-inner)]"
         >
           <SectionHeader
             icon={Bell}
