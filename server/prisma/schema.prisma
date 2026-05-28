@@ -1,0 +1,312 @@
+// StudyWithMe — Neon Postgres + Better Auth (https://www.better-auth.com/docs/concepts/database)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@map("account")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("session")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, value])
+  @@map("verification")
+}
+
+model User {
+  id                   String   @id @default(cuid())
+  email                String   @unique
+  emailVerified        Boolean  @default(false)
+  name                 String?
+  image                String?
+  bio                  String?
+  /// Denormalized sum of completed session minutes; keep in sync when logging FocusSession.
+  lifetimeFocusMinutes Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  hostedRooms   Room[]         @relation("RoomHost")
+  roomMembers   RoomMember[]
+  focusSessions FocusSession[]
+  dailyStats    DailyStats[]
+  streak        Streak?
+  messages      Message[]
+  tasks         Task[]
+  pingSent      Ping[]         @relation("PingSender")
+  pingReceived  Ping[]         @relation("PingReceiver")
+  settings      UserSettings?
+  libraryItems  LibraryItem[]
+  areas         Area[]
+  activityLogs  ActivityLog[]
+
+  @@map("users")
+}
+
+model UserSettings {
+  userId             String   @id
+  theme              Theme    @default(LIGHT)
+  soundEnabled       Boolean  @default(true)
+  compactSidebar     Boolean  @default(false)
+  sessionReminders   Boolean  @default(true)
+  friendActivity     Boolean  @default(false)
+  roomInvites        Boolean  @default(true)
+  leaderboardUpdates Boolean  @default(false)
+  soloMode           Boolean  @default(false)
+  todoDdayDate       String?
+  todoDdayTitle      String?
+  todoWeeklyGoal     Int      @default(12)
+  todoMonthlyGoal    Int      @default(42)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+enum Theme {
+  LIGHT
+  DARK
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  hostId String
+  host   User   @relation("RoomHost", fields: [hostId], references: [id], onDelete: Cascade)
+
+  members       RoomMember[]
+  focusSessions FocusSession[]
+  messages      Message[]
+
+  @@index([isPublic, createdAt(sort: Desc)])
+  @@index([hostId])
+  @@map("rooms")
+}
+
+model RoomMember {
+  userId   String
+  roomId   String
+  role     MemberRole @default(MEMBER)
+  joinedAt DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roomId])
+  @@index([userId, joinedAt(sort: Desc)])
+  @@map("room_members")
+}
+
+enum MemberRole {
+  HOST
+  COHOST
+  MEMBER
+}
+
+/// One completed timer session; daily / weekly / monthly leaderboards aggregate by completedAt; lifetime uses User.lifetimeFocusMinutes + sum(rows).
+model FocusSession {
+  id          String   @id @default(cuid())
+  durationMin Int
+  completedAt DateTime @default(now())
+
+  userId String
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roomId String?
+  room   Room?   @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  areaId String?
+  area   Area?   @relation(fields: [areaId], references: [id], onDelete: SetNull)
+
+  @@index([userId, completedAt])
+  @@map("focus_sessions")
+}
+
+model DailyStats {
+  id           String   @id @default(cuid())
+  date         DateTime
+  totalMinutes Int      @default(0)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@index([date, userId])
+  @@map("daily_stats")
+}
+
+model Streak {
+  userId         String    @id
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastActiveDate DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("streaks")
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  content     String
+  clientNonce String?
+  createdAt   DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId, clientNonce])
+  @@index([roomId, createdAt])
+  @@map("messages")
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  isCompleted Boolean   @default(false)
+  deadline    DateTime?
+  type        TaskType  @default(DAILY)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  areaId String?
+  area   Area?  @relation(fields: [areaId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map("tasks")
+}
+
+enum TaskType {
+  DAILY
+  YEARLY
+  DEADLINE
+}
+
+model Ping {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  fromUserId String
+  fromUser   User   @relation("PingSender", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User   @relation("PingReceiver", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@map("pings")
+}
+
+model LibraryItem {
+  id         String           @id @default(cuid())
+  url        String
+  mediaKind  LibraryMediaKind
+  videoId    String?
+  playlistId String?
+  title      String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  areaId String?
+  area   Area?  @relation(fields: [areaId], references: [id], onDelete: SetNull)
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("library_items")
+}
+
+model Area {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#6366f1")
+  icon      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  focusSessions FocusSession[]
+  tasks         Task[]
+  libraryItems  LibraryItem[]
+  activityLogs  ActivityLog[]
+
+  @@unique([userId, name])
+  @@index([userId, name])
+  @@map("areas")
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  title       String
+  notes       String?
+  durationMin Int?
+  rating      Int?     // 1-10 rating (mood / productivity / effort)
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  areaId String
+  area   Area   @relation(fields: [areaId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("activity_logs")
+}
+
+enum LibraryMediaKind {
+  VIDEO
+  PLAYLIST
+}
