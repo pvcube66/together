@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 
 export function getAvatarInitials(name?: string | null) {
   const raw = (name ?? "").trim();
@@ -38,11 +39,12 @@ export default function AvatarWithFallback({
   return (
     <div className={`relative overflow-hidden ${className}`}>
       {hasSrc ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={src!}
           alt={alt ?? (name ? `${name} avatar` : "avatar")}
           className={`h-full w-full object-cover ${imgClassName}`}
+          fill
+          sizes="96px"
           onError={() => setFailed(true)}
         />
       ) : (

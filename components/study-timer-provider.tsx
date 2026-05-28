@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { toast } from 'sonner';
 import { requestPresenceRefresh } from '@/lib/socket';
 import { TIMER_POLL_INTERVAL_MS } from '@/lib/timer-sync';
 import {
@@ -175,7 +176,18 @@ export function StudyTimerProvider({
           setTodaySeconds((prev) =>
             Math.max(next.todaySeconds, prev + durationSec),
           );
+          const minutes = Math.floor(durationSec / 60);
+          if (minutes > 0) {
+            toast('Session complete', {
+              description: `You studied for ${minutes} minute${minutes !== 1 ? 's' : ''}`,
+              duration: 4000,
+            });
+          }
         } else {
+          toast('Timer started', {
+            description: 'Focus session is now active',
+            duration: 2000,
+          });
           setTodaySeconds(next.todaySeconds);
         }
         setDayKey(next.dayKey);

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
 import {
   ArrowRight,
   ChevronDown,
@@ -220,8 +221,14 @@ export default function RoomsClient({
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? 'Failed to join room.');
+        toast.error('Failed to join room', {
+          description: data.error ?? 'Check the room code and try again.',
+        });
         return;
       }
+      toast.success('Joined room', {
+        description: `You've entered the room`,
+      });
       router.push(`/room/${data.code}`);
     } finally {
       setBusy(false);

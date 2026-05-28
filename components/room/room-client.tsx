@@ -13,6 +13,7 @@ import {
   VideoOff,
   X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { connectWithAuth, type StudySocket } from '@/lib/socket';
 import { useStudyTimer } from '@/components/study-timer-provider';
 import { useSound } from '@/components/sound-provider';
@@ -174,6 +175,10 @@ export default function RoomClient({
     const onKicked = (payload: { roomId: string }) => {
       if (payload.roomId !== roomId) return;
       void stopVideo();
+      toast('You were removed from the room', {
+        description: 'A host has removed you from this room.',
+        duration: 4000,
+      });
       router.push('/rooms');
     };
 
@@ -239,6 +244,9 @@ export default function RoomClient({
     await stopVideo();
     try {
       await fetch(`/api/rooms/${code}`, { method: 'DELETE' });
+      toast('Left room', {
+        description: `You have left "${name}"`,
+      });
       router.push('/rooms');
     } finally {
       setLeaving(false);

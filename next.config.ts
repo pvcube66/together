@@ -50,6 +50,26 @@ const allowedDevOrigins = Array.from(
 );
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.gravatar.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatar.githubusercontent.com',
+      },
+    ],
+  },
   env: {
     NEXT_PUBLIC_APP_URL: resolvedNextPublicApp,
     ...(resolvedNextPublicSocket

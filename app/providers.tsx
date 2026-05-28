@@ -7,6 +7,8 @@ import { StudyTimerProvider } from '@/components/study-timer-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { WhiteNoiseProvider } from '@/components/white-noise-provider';
 import StudyTimerInactivityGuard from '@/components/timer/study-timer-inactivity-guard';
+import ToastProvider from '@/components/toast-provider';
+import KeyboardShortcuts from '@/components/keyboard-shortcuts';
 import type { SerializedUserSettings } from '@/lib/user-settings';
 
 export default function Providers({
@@ -24,7 +26,9 @@ export default function Providers({
             <WhiteNoiseProvider>
               {children}
               <StudyTimerInactivityGuard />
+              <KeyboardShortcuts />
             </WhiteNoiseProvider>
+          <ToastProvider />
           </StudyTimerProvider>
         </SoundProvider>
       </ThemeProvider>
