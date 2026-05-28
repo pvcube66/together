@@ -5,6 +5,7 @@ import { getOrCreateUserSettings } from '@/lib/user-settings';
 import { getDashboardHomeData } from '@/lib/dashboard-home-data';
 import VideoPlayerWrapper from '@/features/dashboard/components/video-player-wrapper';
 import FocusStats from '@/features/dashboard/components/focus-stats';
+import MeditationCard from '@/features/dashboard/components/meditation-card';
 import TodoComponent from '@/features/dashboard/components/todo-component';
 import DashboardHomeSkeleton from '@/components/loading/dashboard-home-skeleton';
 
@@ -28,6 +29,13 @@ async function DashboardHomeContent() {
           monthlyGoal={settings.todoMonthlyGoal}
         />
         <VideoPlayerWrapper />
+      </div>
+
+      <div className="relative z-10 grid min-w-0 grid-cols-1 gap-4 sm:gap-6 md:gap-7 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,3.1fr)] xl:gap-8">
+        <div className="min-h-[4.5rem]">
+          <MeditationCard />
+        </div>
+        <div className="hidden xl:block" />
       </div>
 
       <div className="relative z-10 min-h-[10rem] shrink-0 xl:mt-4 xl:min-h-[18rem]">

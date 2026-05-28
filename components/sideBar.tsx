@@ -29,6 +29,7 @@ import {
   Sparkles,
   Footprints,
   ClipboardList,
+  Flower2,
   type LucideIcon,
 } from 'lucide-react';
 import { useServerUserSettings } from '@/components/server-user-settings';
@@ -45,6 +46,7 @@ const SOCIAL_LINKS = new Set(['/leaderboard', '/rooms']);
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Areas', href: '/areas', icon: Layers },
+  { label: 'Meditation', href: '/meditation', icon: Flower2 },
   { label: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'Rooms', href: '/rooms', icon: Video },
   { label: 'Library', href: '/library', icon: LibraryBig },
