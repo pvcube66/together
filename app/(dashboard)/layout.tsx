@@ -1,6 +1,7 @@
 import Sidebar from '@/components/sideBar';
 import DashboardNavbar from '@/components/dashboard-navbar';
 import FloatingDock from '@/components/floatingDock';
+import PageTransition from '@/components/page-transition';
 import { MobileNavProvider } from '@/components/mobile-nav-context';
 import { getCachedDashboardShellUser } from '@/lib/rsc-cache';
 import { getServerSession } from '@/lib/session';
@@ -43,7 +44,9 @@ export default async function DashboardGroupLayout({
           <DashboardNavbar user={user} />
 
           <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+6.75rem)] sm:pb-[calc(env(safe-area-inset-bottom,0px)+7.25rem)]">
-            {children}
+            <PageTransition>
+              {children}
+            </PageTransition>
           </div>
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex max-w-[100vw] justify-center px-2 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:fixed sm:inset-x-0 sm:bottom-0 sm:pb-4">
