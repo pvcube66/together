@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, Play, Square } from 'lucide-react';
+import { Coffee, Menu, Play, Square } from 'lucide-react';
 import { useServerUserSettings } from '@/components/server-user-settings';
 import { motion } from 'motion/react';
 import { useMobileNav } from '@/components/mobile-nav-context';
@@ -18,7 +18,7 @@ type UserLite = {
 
 export default function DashboardNavbar({ user }: { user: UserLite }) {
   const { openMobileNav, toggleMobileNav, mobileNavOpen } = useMobileNav();
-  const { active, redisAvailable, busy, toggle } = useStudyTimer();
+  const { active, redisAvailable, busy, toggle, pomodoroPhase, pomodoroSecondsRemaining, pomodoroCycleCount, skipBreak } = useStudyTimer();
   const settings = useServerUserSettings();
 
   const ddayText = (() => {
@@ -95,6 +95,26 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
             <Play size={16} strokeWidth={1.8} className="translate-x-[0.5px]" />
           )}
         </motion.button>
+
+        {/* Pomodoro break indicator */}
+        {pomodoroPhase === 'break' && (
+          <motion.button
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={() => skipBreak()}
+            title={`Break: ${Math.floor(pomodoroSecondsRemaining / 60)}:${String(pomodoroSecondsRemaining % 60).padStart(2, '0')} — Click to skip`}
+            aria-label={`Break time — ${Math.floor(pomodoroSecondsRemaining / 60)} minutes remaining. Click to skip.`}
+            className="flex h-10 min-h-[40px] items-center gap-1 rounded-xl border border-amber-200/60 bg-amber-50/80 px-2.5 text-amber-700 dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-300"
+          >
+            <Coffee size={14} strokeWidth={1.7} />
+            <span className="tabular-nums text-[11px] font-medium">
+              {Math.floor(pomodoroSecondsRemaining / 60)}:{String(pomodoroSecondsRemaining % 60).padStart(2, '0')}
+            </span>
+            {pomodoroCycleCount > 0 && (
+              <span className="ml-0.5 text-[10px] opacity-60">#{pomodoroCycleCount}</span>
+            )}
+          </motion.button>
+        )}
         <SoundToggle className="border-0 bg-transparent shadow-none [box-shadow:none] hover:bg-muted/50" />
         <div className="h-4 w-px bg-border/60" aria-hidden />
         <ThemeToggle className="border-0 bg-transparent shadow-none [box-shadow:none] hover:bg-muted/50" />

@@ -25,6 +25,9 @@ const patchSchema = z.object({
   todoDdayTitle: z.string().trim().max(120).optional(),
   todoWeeklyGoal: z.number().int().min(1).optional(),
   todoMonthlyGoal: z.number().int().min(1).optional(),
+  pomodoroEnabled: z.boolean().optional(),
+  pomodoroFocusMinutes: z.number().int().min(1).max(120).optional(),
+  pomodoroBreakMinutes: z.number().int().min(1).max(30).optional(),
 });
 
 export const GET = withApi(async () => {
@@ -83,6 +86,15 @@ export const PATCH = withApi(async (request: Request) => {
       ...(data.todoMonthlyGoal !== undefined
         ? { todoMonthlyGoal: data.todoMonthlyGoal }
         : {}),
+      ...(data.pomodoroEnabled !== undefined
+        ? { pomodoroEnabled: data.pomodoroEnabled }
+        : {}),
+      ...(data.pomodoroFocusMinutes !== undefined
+        ? { pomodoroFocusMinutes: data.pomodoroFocusMinutes }
+        : {}),
+      ...(data.pomodoroBreakMinutes !== undefined
+        ? { pomodoroBreakMinutes: data.pomodoroBreakMinutes }
+        : {}),
     },
     create: {
       userId: session.user.id,
@@ -122,6 +134,15 @@ export const PATCH = withApi(async (request: Request) => {
       ...(data.todoMonthlyGoal !== undefined
         ? { todoMonthlyGoal: data.todoMonthlyGoal }
         : {}),
+      ...(data.pomodoroEnabled !== undefined
+        ? { pomodoroEnabled: data.pomodoroEnabled }
+        : {}),
+      ...(data.pomodoroFocusMinutes !== undefined
+        ? { pomodoroFocusMinutes: data.pomodoroFocusMinutes }
+        : {}),
+      ...(data.pomodoroBreakMinutes !== undefined
+        ? { pomodoroBreakMinutes: data.pomodoroBreakMinutes }
+        : {}),
     },
     select: {
       theme: true,
@@ -136,6 +157,9 @@ export const PATCH = withApi(async (request: Request) => {
       todoDdayTitle: true,
       todoWeeklyGoal: true,
       todoMonthlyGoal: true,
+      pomodoroEnabled: true,
+      pomodoroFocusMinutes: true,
+      pomodoroBreakMinutes: true,
     },
   });
 

@@ -4,6 +4,7 @@ import { useRef, type ComponentType } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import {
+  Coffee,
   Focus,
   Library,
   Medal,
@@ -145,7 +146,7 @@ function formatTodayClock(totalSeconds: number): string {
 }
 
 function StudyTimerDockControl() {
-  const { active, elapsedSeconds, todaySeconds, redisAvailable, busy, toggle } =
+  const { active, elapsedSeconds, todaySeconds, redisAvailable, busy, toggle, pomodoroPhase, pomodoroSecondsRemaining, pomodoroCycleCount } =
     useStudyTimer();
   const { play } = useSound();
   const hoverEnabled = useMediaQuery('(min-width: 640px)');
@@ -157,6 +158,24 @@ function StudyTimerDockControl() {
     todaySeconds,
     elapsedSeconds,
   });
+
+  if (pomodoroPhase === 'break') {
+    const mins = Math.floor(pomodoroSecondsRemaining / 60);
+    const secs = pomodoroSecondsRemaining % 60;
+    return (
+      <div className="mr-1 flex items-center gap-1.5 border-r border-border/50 pr-2">
+        <span className="tabular-nums text-[11px] font-medium text-amber-600 dark:text-amber-400">
+          {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+        </span>
+        <div className="flex items-center gap-1 rounded-xl border border-amber-200/60 bg-amber-50/80 px-2 py-1 text-amber-700 dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-300" style={{ width: hoverEnabled ? 46 : 42, height: hoverEnabled ? 46 : 42 }}>
+          <Coffee size={15} strokeWidth={1.7} className="mx-auto" />
+        </div>
+        {pomodoroCycleCount > 0 && (
+          <span className="text-[10px] text-muted-foreground opacity-60">#{pomodoroCycleCount}</span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="mr-1 flex items-center gap-1.5 border-r border-border/50 pr-2">

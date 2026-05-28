@@ -99,6 +99,9 @@ model UserSettings {
   todoDdayTitle      String?
   todoWeeklyGoal     Int      @default(12)
   todoMonthlyGoal    Int      @default(42)
+  pomodoroEnabled    Boolean  @default(false)
+  pomodoroFocusMinutes Int   @default(25)
+  pomodoroBreakMinutes Int   @default(5)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
