@@ -67,13 +67,20 @@ export default function StartSessionPopover({
     return () => { cancelled = true; };
   }, [open]);
 
-  // Position popover relative to anchor
-  const [position, setPosition] = useState({ top: 0, right: 0 });
+  // Position popover relative to anchor — opens below if space permits, otherwise above
+  const [position, setPosition] = useState({ top: 0, right: 0, bottom: 0 });
+  const [openAbove, setOpenAbove] = useState(false);
   useEffect(() => {
     if (!open || !anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    // Estimate popover height for the threshold check
+    const popoverEstimate = 380;
+    const above = spaceBelow < popoverEstimate;
+    setOpenAbove(above);
     setPosition({
-      top: rect.bottom + 6,
+      top: above ? 0 : rect.bottom + 6,
+      bottom: above ? window.innerHeight - rect.top + 6 : 0,
       right: window.innerWidth - rect.right,
     });
   }, [open, anchorRef]);
@@ -131,12 +138,17 @@ export default function StartSessionPopover({
       {open && (
         <motion.div
           ref={popoverRef}
-          initial={{ opacity: 0, y: -4, scale: 0.96 }}
+          initial={{ opacity: 0, y: openAbove ? 4 : -4, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -4, scale: 0.96 }}
+          exit={{ opacity: 0, y: openAbove ? 4 : -4, scale: 0.96 }}
           transition={{ duration: 0.15, ease: [0, 0, 0.58, 1] }}
-          style={{ top: position.top, right: position.right }}
+          style={{
+            ...(openAbove
+              ? { bottom: position.bottom, right: position.right }
+              : { top: position.top, right: position.right }),
+          }}
           className="fixed z-[200] w-64 overflow-hidden rounded-xl border border-border/60 bg-card shadow-[var(--shadow-float,0_4px_20px_rgba(0,0,0,0.12))] backdrop-blur-md"
+          key="start-session-popover"
         >
           {/* Header */}
           <div className="px-3 py-2.5">
