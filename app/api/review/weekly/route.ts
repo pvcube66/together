@@ -15,44 +15,28 @@ export const GET = withApi(async () => {
 
   const [
     focusSessions,
-    probCounts,
-    runsAgg,
-    checkins,
+    activityLogs,
     tasksCompleted,
     areas,
   ] = await Promise.all([
-    // Focus minutes by area this week
+    // Weekly Focus Sessions
     prisma.focusSession.findMany({
       where: { userId, completedAt: { gte: weekStart, lt: weekEnd } },
-      select: { durationMin: true, areaId: true, area: { select: { id: true, name: true, color: true, icon: true } } },
+      select: { durationMin: true, areaId: true },
     }),
 
-    // Problems solved this week by difficulty
-    prisma.problemLog.groupBy({
-      by: ["difficulty"],
-      where: { userId, solvedAt: { gte: weekStart, lt: weekEnd } },
-      _count: true,
-    }),
-
-    // Run stats for the week
-    prisma.runLog.aggregate({
-      where: { userId, runDate: { gte: weekStart, lt: weekEnd } },
-      _count: true,
-      _sum: { distanceKm: true, durationMin: true },
-    }),
-
-    // Check-ins for the week
-    prisma.dailyCheckin.findMany({
+    // Weekly Activity Logs
+    prisma.activityLog.findMany({
       where: { userId, date: { gte: weekStart, lt: weekEnd } },
-      select: { moodScore: true, energyScore: true, focusScore: true },
+      select: { durationMin: true, rating: true },
     }),
 
-    // Tasks completed this week
+    // Weekly Completed Tasks
     prisma.task.count({
       where: { userId, isCompleted: true, updatedAt: { gte: weekStart, lt: weekEnd } },
     }),
 
-    // All user areas for display
+    // All user areas
     prisma.area.findMany({
       where: { userId },
       select: { id: true, name: true, color: true, icon: true },
@@ -85,32 +69,15 @@ export const GET = withApi(async () => {
     });
   }
 
-  // Problems by difficulty
-  const problemsByDifficulty = {
-    EASY: probCounts.find((p) => p.difficulty === "EASY")?._count ?? 0,
-    MEDIUM: probCounts.find((p) => p.difficulty === "MEDIUM")?._count ?? 0,
-    HARD: probCounts.find((p) => p.difficulty === "HARD")?._count ?? 0,
-  };
-  const totalProblems = problemsByDifficulty.EASY + problemsByDifficulty.MEDIUM + problemsByDifficulty.HARD;
-
-  // Run stats
-  const totalRuns = runsAgg._count;
-  const totalDistance = Math.round((runsAgg._sum.distanceKm ?? 0) * 100) / 100;
-  const totalDuration = runsAgg._sum.durationMin ?? 0;
-
-  // Check-in averages
-  const avgMood = checkins.length > 0
-    ? Math.round(checkins.reduce((s, c) => s + c.moodScore, 0) / checkins.length * 10) / 10
-    : 0;
-  const avgEnergy = checkins.length > 0
-    ? Math.round(checkins.reduce((s, c) => s + c.energyScore, 0) / checkins.length * 10) / 10
-    : 0;
-  const avgFocus = checkins.length > 0
-    ? Math.round(checkins.reduce((s, c) => s + c.focusScore, 0) / checkins.length * 10) / 10
-    : 0;
-
-  // Weekly total study minutes
   const totalStudyMinutes = focusSessions.reduce((s, f) => s + f.durationMin, 0);
+  const totalActivities = activityLogs.length;
+
+  const ratedLogs = activityLogs.filter((log) => log.rating !== null);
+  const avgProductivity = ratedLogs.length > 0
+    ? Math.round((ratedLogs.reduce((s, l) => s + (l.rating || 0), 0) / ratedLogs.length) * 10) / 10
+    : 0;
+
+  const totalActivityMinutes = activityLogs.reduce((s, l) => s + (l.durationMin || 0), 0);
 
   return NextResponse.json({
     weekStart: weekStart.toISOString().slice(0, 10),
@@ -119,17 +86,9 @@ export const GET = withApi(async () => {
     totalStudyMinutes,
     totalSessions: focusSessions.length,
     hoursByArea,
-    problemsByDifficulty,
-    totalProblems,
-    totalRuns,
-    totalDistance,
-    totalDuration,
-    checkinDays: checkins.length,
-    avgMood,
-    avgEnergy,
-    avgFocus,
+    totalActivities,
+    avgProductivity,
+    totalActivityMinutes,
     tasksCompleted,
   });
 });
-
-// — GET: weekly aggregates for focus sessions, problems, runs, check-ins, and tasks.

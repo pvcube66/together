@@ -53,9 +53,9 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
     );
   }, []);
 
-  const sendPending = useCallback((clientNonce: string) => {
+  const sendPending = useCallback(async (clientNonce: string) => {
     const pending = pendingRef.current.get(clientNonce);
-    const socket = connectWithAuth();
+    const socket = await connectWithAuth();
     if (!pending || !socket) {
       markFailed(clientNonce);
       return;
@@ -72,7 +72,7 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
 
     const timeout = window.setTimeout(() => {
       if (pending.attempts < 3 && socket.connected) {
-        sendPending(clientNonce);
+        void sendPending(clientNonce);
         return;
       }
       markFailed(clientNonce, "Failed to send");
@@ -89,7 +89,7 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
         window.clearTimeout(timeout);
         if (!response.ok || !response.message) {
           if (pending.attempts < 3 && socket.connected) {
-            window.setTimeout(() => sendPending(clientNonce), 900 * pending.attempts);
+            window.setTimeout(() => void sendPending(clientNonce), 900 * pending.attempts);
             return;
           }
           markFailed(clientNonce, response.error ?? "Failed to send");
@@ -103,8 +103,7 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
   }, [markFailed, mergeMessage]);
 
   useEffect(() => {
-    const socket = connectWithAuth();
-    if (!socket) return;
+    let socket: any = null;
 
     const onChatMessage = (payload: ChatMessage & { roomId?: string }) => {
       if (payload.roomId && payload.roomId !== roomId) return;
@@ -113,14 +112,22 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
     };
 
     const retryPending = () => {
-      for (const nonce of pendingRef.current.keys()) sendPending(nonce);
+      for (const nonce of pendingRef.current.keys()) void sendPending(nonce);
     };
 
-    socket.on("chat:message", onChatMessage);
-    socket.on("connect", retryPending);
+    connectWithAuth().then((s) => {
+      socket = s;
+      if (!socket) return;
+
+      socket.on("chat:message", onChatMessage);
+      socket.on("connect", retryPending);
+    });
+
     return () => {
-      socket.off("chat:message", onChatMessage);
-      socket.off("connect", retryPending);
+      if (socket) {
+        socket.off("chat:message", onChatMessage);
+        socket.off("connect", retryPending);
+      }
     };
   }, [mergeMessage, roomId, sendPending]);
 
@@ -158,9 +165,6 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
     const content = input.trim();
     if (!content) return;
 
-    const socket = connectWithAuth();
-    if (!socket) return;
-
     const clientNonce = crypto.randomUUID();
     const now = new Date().toISOString();
     pendingRef.current.set(clientNonce, { roomId, content, attempts: 0 });
@@ -177,7 +181,7 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
       },
     ]);
     setInput("");
-    sendPending(clientNonce);
+    void sendPending(clientNonce);
   }
 
   return (

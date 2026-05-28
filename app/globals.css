@@ -85,8 +85,8 @@
   --sidebar-ring: oklch(0.62 0.04 55);
   /* L1 — large chrome panels (rooms/dashboard shells) */
   --panel-texture-bg: oklch(0.979 0.0068 78);
-  /* Paper grain only — keep ≤ 0.04 for subconscious read */
-  --panel-texture-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+  /* Paper grain disabled for clean premium look */
+  --panel-texture-image: none;
   /* Softer lift — diffused, not template-y */
   --shadow-ambient-sm:
     0 1px 2px rgb(22 25 37 / 0.034), 0 16px 42px rgb(112 82 62 / 0.048);
@@ -95,13 +95,7 @@
   --shadow-float:
     0 1px 2px rgb(22 25 37 / 0.038), 0 18px 48px rgb(108 82 62 / 0.062),
     inset 0 1px 0 rgb(255 255 255 / 0.36);
-  --app-hatch: repeating-linear-gradient(
-    -48deg,
-    rgb(22 25 37 / 0.02) 0px,
-    rgb(22 25 37 / 0.02) 1px,
-    transparent 1px,
-    transparent 11px
-  );
+  --app-hatch: none;
 }
 
 .dark {
@@ -134,21 +128,14 @@
   --sidebar-accent-foreground: oklch(0.962 0.006 78);
   --sidebar-border: oklch(0.35 0.02 268);
   --sidebar-ring: oklch(0.58 0.05 54);
-  --panel-texture-bg: oklch(0.248 0.019 268);
-  --panel-texture-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  --panel-texture-image: none;
   --shadow-ambient-sm: 0 1px 3px rgb(0 0 0 / 0.2), 0 16px 44px rgb(0 0 0 / 0.2);
   --shadow-ambient-md:
     0 2px 6px rgb(0 0 0 / 0.24), 0 26px 60px rgb(0 0 0 / 0.26);
   --shadow-float:
     0 1px 2px rgb(0 0 0 / 0.2), 0 16px 44px rgb(0 0 0 / 0.24),
     inset 0 1px 0 rgb(255 255 255 / 0.045);
-  --app-hatch: repeating-linear-gradient(
-    -48deg,
-    rgb(255 255 255 / 0.018) 0px,
-    rgb(255 255 255 / 0.018) 1px,
-    transparent 1px,
-    transparent 11px
-  );
+  --app-hatch: none;
 }
 
 @keyframes app-shimmer-sweep {

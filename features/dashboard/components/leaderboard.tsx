@@ -163,7 +163,6 @@ export default function Leaderboard({
       }
     };
 
-    void pull();
     startPollIfVisible();
     window.addEventListener('study-stats-changed', onStats);
     document.addEventListener('visibilitychange', onVis);
@@ -176,9 +175,9 @@ export default function Leaderboard({
   }, []);
 
   useEffect(() => {
-    const socket = connectWithAuth();
-    if (!socket || !activeBoardId) return;
+    if (!activeBoardId) return;
 
+    let socket: any = null;
     const onPresence = (payload: {
       roomId: string;
       memberIds: string[];
@@ -192,13 +191,19 @@ export default function Leaderboard({
       setActiveVideoEnabledUserIds(payload.videoEnabledUserIds);
     };
 
-    socket.on('presence', onPresence);
-    if (socket.connected) {
-      socket.emit('presence:refresh');
-    }
+    connectWithAuth().then((s) => {
+      socket = s;
+      if (!socket) return;
+      socket.on('presence', onPresence);
+      if (socket.connected) {
+        socket.emit('presence:refresh');
+      }
+    });
 
     return () => {
-      socket.off('presence', onPresence);
+      if (socket) {
+        socket.off('presence', onPresence);
+      }
     };
   }, [activeBoardId]);
 
@@ -216,27 +221,19 @@ export default function Leaderboard({
         <motion.div
           className={
             (allowPanelDrag ? 'app-cursor-drag ' : '') +
-            'relative h-full min-h-0 w-full min-w-0 max-w-full border border-black/[0.035] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] ring-1 ring-inset ring-black/[0.03] dark:ring-white/[0.045]'
+            'relative h-full min-h-0 w-full min-w-0 max-w-full rounded-2xl border border-border/40 bg-card p-4 shadow-ambient-md transition-shadow'
           }
-          style={{
-            borderRadius: `${LB_OUTER}px`,
-            padding: `${LB_GAP}px`,
-            boxShadow: LB_SHADOW,
-          }}
-          whileHover={allowPanelDrag ? { y: -1, scale: 1.002 } : undefined}
+          whileHover={allowPanelDrag ? { y: -2 } : undefined}
           drag={allowPanelDrag}
           dragConstraints={
-            allowPanelDrag ? { top: -4, left: -4, right: 4, bottom: 4 } : false
+            allowPanelDrag ? { top: -6, left: -6, right: 6, bottom: 6 } : false
           }
           dragElastic={allowPanelDrag ? 0.08 : 0}
           dragTransition={allowPanelDrag ? SPRING_DRAG_RELEASE : undefined}
           transition={SPRING_HOVER}
         >
-          <div
-            className="relative flex h-full w-full flex-col overflow-hidden border border-black/[0.03] bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] dark:border-white/[0.05] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.045)]"
-            style={{ borderRadius: `${LB_INNER}px` }}
-          >
-            <div className="min-h-0 flex-1 px-1.5 py-1.5">
+          <div className="relative flex h-full w-full flex-col overflow-hidden">
+            <div className="min-h-0 flex-1 px-0.5 py-0.5">
               {displayBoards.length > 0 ? (
                 <RoomLeaderboardCarousel
                   boards={displayBoards}

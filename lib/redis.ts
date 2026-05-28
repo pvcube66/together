@@ -127,6 +127,46 @@ class UpstashCompat {
     }
   }
 
+  async exists(key: string): Promise<number> {
+    if (!this.isConnected) return 0;
+    try {
+      return await this.r.exists(key);
+    } catch (err) {
+      console.error("[redis] exists failed:", err);
+      return 0;
+    }
+  }
+
+  async zrevrank(key: string, member: string): Promise<number | null> {
+    if (!this.isConnected) return null;
+    try {
+      return await this.r.zrevrank(key, member);
+    } catch (err) {
+      console.error("[redis] zrevrank failed:", err);
+      return null;
+    }
+  }
+
+  async zscore(key: string, member: string): Promise<string | null> {
+    if (!this.isConnected) return null;
+    try {
+      return await this.r.zscore(key, member);
+    } catch (err) {
+      console.error("[redis] zscore failed:", err);
+      return null;
+    }
+  }
+
+  async zcard(key: string): Promise<number> {
+    if (!this.isConnected) return 0;
+    try {
+      return await this.r.zcard(key);
+    } catch (err) {
+      console.error("[redis] zcard failed:", err);
+      return 0;
+    }
+  }
+
   pipeline() {
     if (!this.isConnected) {
       return {

@@ -50,11 +50,11 @@ export function useRoomVideo({
   }, []);
 
   const createPeer = useCallback(
-    (peerId: string) => {
+    async (peerId: string) => {
       const existing = peersRef.current.get(peerId);
       if (existing) return existing;
 
-      const socket = connectWithAuth();
+      const socket = await connectWithAuth();
       const peer = new RTCPeerConnection({ iceServers: getIceServers() });
       peersRef.current.set(peerId, peer);
 
@@ -114,9 +114,10 @@ export function useRoomVideo({
   );
 
   const stop = useCallback(() => {
-    const socket = connectWithAuth();
-    socket?.emit('media:leave', { roomId });
-    socket?.emit('room:video-state', { roomId, enabled: false });
+    connectWithAuth().then((socket) => {
+      socket?.emit('media:leave', { roomId });
+      socket?.emit('room:video-state', { roomId, enabled: false });
+    });
     peersRef.current.forEach((peer) => peer.close());
     peersRef.current.clear();
     pendingCandidatesRef.current.clear();
@@ -138,7 +139,7 @@ export function useRoomVideo({
         video: true,
         audio: false,
       });
-      const socket = connectWithAuth();
+      const socket = await connectWithAuth();
       if (!socket) throw new Error('Socket unavailable.');
 
       const allowed = await new Promise<{ ok: boolean; error?: string }>(
@@ -191,7 +192,7 @@ export function useRoomVideo({
       if (!joined.ok) throw new Error('Could not join room video.');
 
       for (const peerId of joined.peers ?? []) {
-        const peer = createPeer(peerId);
+        const peer = await createPeer(peerId);
         const offer = await peer.createOffer();
         await peer.setLocalDescription(offer);
         socket.emit('media:offer', {
@@ -210,8 +211,7 @@ export function useRoomVideo({
   }, [createPeer, roomId, starting, stop]);
 
   useEffect(() => {
-    const socket = connectWithAuth();
-    if (!socket) return;
+    let socket: any = null;
 
     const onOffer = async (payload: {
       roomId: string;
@@ -219,16 +219,18 @@ export function useRoomVideo({
       description: RTCSessionDescriptionInit;
     }) => {
       if (payload.roomId !== roomId || !localStreamRef.current) return;
-      const peer = createPeer(payload.fromUserId);
+      const peer = await createPeer(payload.fromUserId);
       await peer.setRemoteDescription(payload.description);
       await addPendingCandidates(payload.fromUserId, peer);
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
-      socket.emit('media:answer', {
-        roomId,
-        toUserId: payload.fromUserId,
-        description: answer,
-      });
+      if (socket) {
+        socket.emit('media:answer', {
+          roomId,
+          toUserId: payload.fromUserId,
+          description: answer,
+        });
+      }
     };
 
     const onAnswer = async (payload: {
@@ -265,16 +267,22 @@ export function useRoomVideo({
       closePeer(payload.userId);
     };
 
-    socket.on('media:offer', onOffer);
-    socket.on('media:answer', onAnswer);
-    socket.on('media:ice-candidate', onIce);
-    socket.on('media:peer-left', onPeerLeft);
+    connectWithAuth().then((s) => {
+      socket = s;
+      if (!socket) return;
+      socket.on('media:offer', onOffer);
+      socket.on('media:answer', onAnswer);
+      socket.on('media:ice-candidate', onIce);
+      socket.on('media:peer-left', onPeerLeft);
+    });
 
     return () => {
-      socket.off('media:offer', onOffer);
-      socket.off('media:answer', onAnswer);
-      socket.off('media:ice-candidate', onIce);
-      socket.off('media:peer-left', onPeerLeft);
+      if (socket) {
+        socket.off('media:offer', onOffer);
+        socket.off('media:answer', onAnswer);
+        socket.off('media:ice-candidate', onIce);
+        socket.off('media:peer-left', onPeerLeft);
+      }
     };
   }, [addPendingCandidates, closePeer, createPeer, roomId]);
 

@@ -28,6 +28,7 @@ import {
   X,
   Sparkles,
   Footprints,
+  ClipboardList,
   type LucideIcon,
 } from 'lucide-react';
 import { useServerUserSettings } from '@/components/server-user-settings';
@@ -47,11 +48,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'Rooms', href: '/rooms', icon: Video },
   { label: 'Library', href: '/library', icon: LibraryBig },
-  { label: 'Problems', href: '/problems', icon: Beaker },
-  { label: 'Check-in', href: '/checkins', icon: Sparkles },
-  { label: 'Runs', href: '/runs', icon: Footprints },
-  { label: 'Review', href: '/review', icon: BarChart3 },
-  { label: 'Records', href: '/records', icon: Trophy },
+  { label: 'Logs', href: '/logs', icon: ClipboardList },
+  { label: 'Review & Records', href: '/review', icon: BarChart3 },
   { label: 'Todo', href: '/dashboard/todo', icon: CheckSquare },
   { label: 'Profile', href: '/profile', icon: UserCircle },
   { label: 'Settings', href: '/settings', icon: Settings },

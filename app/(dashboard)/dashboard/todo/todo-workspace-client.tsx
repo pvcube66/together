@@ -108,10 +108,14 @@ export default function TodoWorkspaceClient({
   initialTasks,
   initialDdayDate,
   initialDdayTitle,
+  initialWeeklyGoal,
+  initialMonthlyGoal,
 }: {
   initialTasks: TodoTask[];
   initialDdayDate: string;
   initialDdayTitle: string;
+  initialWeeklyGoal: number;
+  initialMonthlyGoal: number;
 }) {
   const [tasks, setTasks] = useState(initialTasks);
   const [slicedId, setSlicedId] = useState<string | null>(null);
@@ -127,8 +131,8 @@ export default function TodoWorkspaceClient({
   const [modalBusy, setModalBusy] = useState(false);
   const [dDay, setDDay] = useState(initialDdayDate);
   const [dDayName, setDDayName] = useState(initialDdayTitle);
-  const [weeklyGoal, setWeeklyGoal] = useState(12);
-  const [monthlyGoal, setMonthlyGoal] = useState(42);
+  const [weeklyGoal, setWeeklyGoal] = useState(initialWeeklyGoal);
+  const [monthlyGoal, setMonthlyGoal] = useState(initialMonthlyGoal);
   const reduceMotion = useReducedMotion();
   const { play } = useSound();
   const opSeqRef = useRef<Map<string, number>>(new Map());
@@ -138,6 +142,65 @@ export default function TodoWorkspaceClient({
     todoDdayDate: initialDdayDate,
     todoDdayTitle: initialDdayTitle,
   });
+
+  const goalsHydratedRef = useRef(false);
+  const goalsSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const goalsSnapshotRef = useRef({
+    todoWeeklyGoal: initialWeeklyGoal,
+    todoMonthlyGoal: initialMonthlyGoal,
+  });
+
+  useEffect(() => {
+    setWeeklyGoal(initialWeeklyGoal);
+  }, [initialWeeklyGoal]);
+
+  useEffect(() => {
+    setMonthlyGoal(initialMonthlyGoal);
+  }, [initialMonthlyGoal]);
+
+  useEffect(() => {
+    if (!goalsHydratedRef.current) {
+      goalsHydratedRef.current = true;
+      return;
+    }
+
+    const nextPayload = {
+      todoWeeklyGoal: weeklyGoal,
+      todoMonthlyGoal: monthlyGoal,
+    };
+
+    if (
+      goalsSnapshotRef.current.todoWeeklyGoal === nextPayload.todoWeeklyGoal &&
+      goalsSnapshotRef.current.todoMonthlyGoal === nextPayload.todoMonthlyGoal
+    ) {
+      return;
+    }
+
+    if (goalsSaveTimerRef.current) clearTimeout(goalsSaveTimerRef.current);
+
+    goalsSaveTimerRef.current = setTimeout(() => {
+      const previousSnapshot = goalsSnapshotRef.current;
+      goalsSnapshotRef.current = nextPayload;
+      void fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(nextPayload),
+      })
+        .then(async (res) => {
+          if (res.ok) return;
+          goalsSnapshotRef.current = previousSnapshot;
+          play('error');
+        })
+        .catch(() => {
+          goalsSnapshotRef.current = previousSnapshot;
+          play('error');
+        });
+    }, 250);
+
+    return () => {
+      if (goalsSaveTimerRef.current) clearTimeout(goalsSaveTimerRef.current);
+    };
+  }, [weeklyGoal, monthlyGoal, play]);
 
   const done = tasks.filter((t) => t.isCompleted).length;
   const dValue = dateDiff(new Date(dDay + 'T12:00:00'));

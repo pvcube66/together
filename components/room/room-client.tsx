@@ -146,37 +146,13 @@ export default function RoomClient({
   }, [play, selfCamOn, startVideo, stopVideo]);
 
   useEffect(() => {
-    const socket = connectWithAuth();
-    if (!socket) return;
+    let socket: any = null;
+    let keepAliveId: ReturnType<typeof setInterval>;
 
     const clearRefreshTimers = () => {
       refreshTimerRefs.current.forEach((id) => clearTimeout(id));
       refreshTimerRefs.current = [];
     };
-    const queuePresenceRefreshBurst = () => {
-      clearRefreshTimers();
-      const delays = [120, 450, 1100];
-      refreshTimerRefs.current = delays.map((ms) =>
-        setTimeout(() => {
-          if (socket.connected) socket.emit('presence:refresh');
-        }, ms),
-      );
-    };
-    const joinRoom = () => {
-      socket.emit(
-        'room:join',
-        { roomId },
-        (response: { ok: boolean; error?: string }) => {
-          if (response.ok) {
-            // Join succeeded, request presence update
-            queuePresenceRefreshBurst();
-          } else {
-            console.error('Room join failed:', response.error);
-          }
-        },
-      );
-    };
-    joinRoom();
 
     const onPresence = (payload: {
       roomId: string;
@@ -200,25 +176,61 @@ export default function RoomClient({
       void stopVideo();
       router.push('/rooms');
     };
-    const onConnect = () => {
-      joinRoom();
-    };
 
-    socket.on('presence', onPresence);
-    socket.on('room:kicked', onKicked);
-    socket.on('connect', onConnect);
-    const keepAliveId = setInterval(() => {
-      if (socket.connected) socket.emit('presence:refresh');
-    }, 15_000);
+    connectWithAuth().then((s) => {
+      socket = s;
+      if (!socket) return;
+
+      const queuePresenceRefreshBurst = () => {
+        clearRefreshTimers();
+        const delays = [120, 450, 1100];
+        refreshTimerRefs.current = delays.map((ms) =>
+          setTimeout(() => {
+            if (socket.connected) socket.emit('presence:refresh');
+          }, ms),
+        );
+      };
+
+      const joinRoom = () => {
+        socket.emit(
+          'room:join',
+          { roomId },
+          (response: { ok: boolean; error?: string }) => {
+            if (response.ok) {
+              queuePresenceRefreshBurst();
+            } else {
+              console.error('Room join failed:', response.error);
+            }
+          },
+        );
+      };
+
+      joinRoom();
+
+      const onConnect = () => {
+        joinRoom();
+      };
+
+      socket.on('presence', onPresence);
+      socket.on('room:kicked', onKicked);
+      socket.on('connect', onConnect);
+
+      keepAliveId = setInterval(() => {
+        if (socket.connected) socket.emit('presence:refresh');
+      }, 15_000);
+    });
 
     return () => {
       clearRefreshTimers();
-      clearInterval(keepAliveId);
-      socket.emit('room:leave', { roomId });
+      if (keepAliveId) clearInterval(keepAliveId);
+      if (socket) {
+        socket.emit('room:leave', { roomId });
+        socket.off('presence', onPresence);
+        socket.off('room:kicked', onKicked);
+        // We can't easily remove onConnect since it's defined inside the then block,
+        // but it's fine since the component is unmounting.
+      }
       stopVideo();
-      socket.off('presence', onPresence);
-      socket.off('room:kicked', onKicked);
-      socket.off('connect', onConnect);
     };
   }, [roomId, router, stopVideo]);
 

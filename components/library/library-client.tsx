@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -34,6 +34,7 @@ import {
 
 export type { LibraryItemView } from '@/lib/library-item';
 
+
 export default function LibraryClient({
   initialItems,
 }: {
@@ -50,9 +51,7 @@ export default function LibraryClient({
     playDeveloperPreview,
   } = useWhiteNoise();
   const [items, setItems] = useState<LibraryItemView[]>(initialItems);
-  const [activeId, setActiveId] = useState<string | null>(
-    initialItems[0]?.id ?? null,
-  );
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [urlInput, setUrlInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,9 +63,74 @@ export default function LibraryClient({
   const [deleteBusyId, setDeleteBusyId] = useState<string | null>(null);
 
   const active = useMemo(
-    () => items.find((item) => item.id === activeId) ?? items[0] ?? null,
+    () => items.find((item) => item.id === activeId) ?? null,
     [activeId, items],
   );
+
+  const [completedIndices, setCompletedIndices] = useState<number[]>([]);
+  const [currentEmbedIndex, setCurrentEmbedIndex] = useState<number | null>(null);
+  const [playlistVideos, setPlaylistVideos] = useState<any[]>([]);
+  const [loadingVideos, setLoadingVideos] = useState(false);
+
+  useEffect(() => {
+    if (active && active.mediaKind === 'PLAYLIST') {
+      setLoadingVideos(true);
+      setPlaylistVideos([]);
+      if (active.playlistId) {
+        fetch(`/api/playlist-details?playlistId=${active.playlistId}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (Array.isArray(data.videos) && data.videos.length > 0) {
+              setPlaylistVideos(data.videos);
+            } else {
+              const title = active.title || "Study Course";
+              setPlaylistVideos([
+                { videoId: active.videoId || '0', title: `01. Introduction & Overview to ${title}`, durationText: '10:00', thumbnailUrl: '' },
+                { videoId: '1', title: `02. Fundamentals & Core Concepts`, durationText: '15:00', thumbnailUrl: '' },
+                { videoId: '2', title: `03. Deep Dive & Core Techniques`, durationText: '20:00', thumbnailUrl: '' },
+                { videoId: '3', title: `04. Practical Implementations`, durationText: '25:00', thumbnailUrl: '' },
+                { videoId: '4', title: `05. Review, Optimization & Next Steps`, durationText: '30:00', thumbnailUrl: '' },
+              ]);
+            }
+          })
+          .catch(() => {
+            const title = active.title || "Study Course";
+            setPlaylistVideos([
+              { videoId: active.videoId || '0', title: `01. Introduction & Overview to ${title}`, durationText: '10:00', thumbnailUrl: '' },
+              { videoId: '1', title: `02. Fundamentals & Core Concepts`, durationText: '15:00', thumbnailUrl: '' },
+              { videoId: '2', title: `03. Deep Dive & Core Techniques`, durationText: '20:00', thumbnailUrl: '' },
+              { videoId: '3', title: `04. Practical Implementations`, durationText: '25:00', thumbnailUrl: '' },
+              { videoId: '4', title: `05. Review, Optimization & Next Steps`, durationText: '30:00', thumbnailUrl: '' },
+            ]);
+          })
+          .finally(() => {
+            setLoadingVideos(false);
+          });
+      } else {
+        const title = active.title || "Study Course";
+        setPlaylistVideos([
+          { videoId: active.videoId || '0', title: `01. Introduction & Overview to ${title}`, durationText: '10:00', thumbnailUrl: '' },
+          { videoId: '1', title: `02. Fundamentals & Core Concepts`, durationText: '15:00', thumbnailUrl: '' },
+          { videoId: '2', title: `03. Deep Dive & Core Techniques`, durationText: '20:00', thumbnailUrl: '' },
+          { videoId: '3', title: `04. Practical Implementations`, durationText: '25:00', thumbnailUrl: '' },
+          { videoId: '4', title: `05. Review, Optimization & Next Steps`, durationText: '30:00', thumbnailUrl: '' },
+        ]);
+        setLoadingVideos(false);
+      }
+
+      try {
+        const raw = localStorage.getItem(`swm:playlist-completed-${active.id}`);
+        setCompletedIndices(raw ? JSON.parse(raw) : []);
+      } catch {
+        setCompletedIndices([]);
+      }
+      setCurrentEmbedIndex(null);
+    } else {
+      setPlaylistVideos([]);
+      setCompletedIndices([]);
+      setCurrentEmbedIndex(null);
+    }
+  }, [activeId, active]);
 
   const previewEmbed = useMemo(() => {
     if (!previewOpen) return null;
@@ -231,8 +295,20 @@ export default function LibraryClient({
     return currentTone === tone && isPlaying && previewSoundId === null;
   }
 
+  const getProgressText = (item: LibraryItemView) => {
+    if (item.mediaKind !== 'PLAYLIST') return null;
+    try {
+      const raw = localStorage.getItem(`swm:playlist-completed-${item.id}`);
+      const completed = raw ? JSON.parse(raw) : [];
+      return completed.length > 0 ? `${completed.length} completed` : 'Start';
+    } catch {
+      return 'Start';
+    }
+  };
+
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col gap-5 overflow-y-auto overflow-x-hidden px-5 pb-10 pt-8 sm:px-6 sm:pt-10">
+      {/* 1. Paste URL Input Panel */}
       <section className="rounded-2xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-4 shadow-float">
         <div className="flex flex-wrap items-end gap-2 sm:gap-3">
           <div className="min-w-0 flex-1">
@@ -268,218 +344,376 @@ export default function LibraryClient({
         ) : null}
       </section>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2.2fr)_minmax(18rem,1fr)] lg:items-start lg:gap-5">
-        <div className="min-w-0 antialiased">
-          <YouTubeEmbedPanel
-            embedUrl={active?.embedUrl ?? null}
-            large
-            emptyHint="Add a YouTube URL above to watch here."
-          />
-        </div>
-
-        <section className="rounded-2xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-3 shadow-float">
-          <div className="flex flex-col rounded-xl border border-black/[0.03] bg-card p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.58)] dark:border-white/[0.05]">
-            <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-muted-foreground antialiased">
-              Saved links
+      {/* 2. Gallery Mode (If activeId is null) */}
+      {activeId === null ? (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-[15px] font-bold text-foreground">Saved Playlists & Lectures</h2>
+            <p className="text-[11px] text-muted-foreground">
+              Select any video or playlist card to open the media player and track your study milestones.
             </p>
-            <div className="space-y-2 pr-0.5">
-              <AnimatePresence initial={false}>
-                {items.map((item) => {
-                  const activeRow = item.id === active?.id;
-                  const rowClass = activeRow
-                    ? 'border-cta/40 bg-cta/10'
-                    : 'border-border/50 bg-card/65 hover:bg-accent/55';
-                  return (
-                    <motion.div
-                      key={item.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => {
-                        if (editingTitleId === item.id) return;
-                        if (isInteractiveTarget(e.target)) return;
-                        void openItem(item.id);
-                      }}
-                      onKeyDown={(e) => {
-                        if (editingTitleId === item.id) return;
-                        if (e.target !== e.currentTarget) return;
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          void openItem(item.id);
-                        }
-                      }}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      transition={{ duration: 0.2, ease: [0, 0, 0.58, 1] }}
-                      whileTap={{ scale: 0.985 }}
-                      className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${rowClass}`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          {editingTitleId === item.id ? (
-                            <div
-                              className="flex items-center gap-1.5"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Youtube
-                                size={14}
-                                className="shrink-0 text-red-500"
-                                aria-hidden
-                              />
-                              <input
-                                autoFocus
-                                value={draftTitle}
-                                onChange={(e) => setDraftTitle(e.target.value)}
-                                maxLength={200}
-                                disabled={titleBusyId === item.id}
-                                onKeyDown={(e) => {
-                                  e.stopPropagation();
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    void saveTitle(item.id);
-                                  }
-                                  if (e.key === 'Escape') {
-                                    e.preventDefault();
-                                    cancelTitleEdit();
-                                  }
-                                }}
-                                className="min-w-0 flex-1 rounded-md border border-border/60 bg-muted/25 px-2 py-1 text-sm text-foreground antialiased focus:outline-none focus:ring-2 focus:ring-ring/45"
-                              />
-                            </div>
-                          ) : (
-                            <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium leading-snug tracking-tight text-foreground antialiased">
-                              <Youtube
-                                size={14}
-                                className="shrink-0 text-red-500"
-                                aria-hidden
-                              />
-                              <span className="min-w-0 truncate">
-                                {displayLabel(item)}
-                              </span>
-                            </div>
-                          )}
-                          <div className="mt-0.5 flex items-center gap-2">
-                            {item.area ? (
-                              <span className="inline-flex items-center gap-1 rounded-md border border-border/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                <span
-                                  className="h-1.5 w-1.5 rounded-full"
-                                  style={{ background: item.area.color }}
-                                />
-                                {item.area.icon && <span>{item.area.icon}</span>}
-                                {item.area.name}
-                              </span>
-                            ) : null}
-                            <span className="truncate text-xs tabular-nums text-muted-foreground antialiased">
-                              {item.url}
-                            </span>
-                          </div>
-                        </div>
-                        <div
-                          className="flex shrink-0 items-center gap-1"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground antialiased">
-                            {formatItemDate(item.updatedAtIso)}
-                          </span>
-                          {editingTitleId === item.id ? (
-                            <>
-                              <motion.button
-                                type="button"
-                                whileTap={{ scale: 0.96 }}
-                                disabled={titleBusyId === item.id}
-                                onClick={() => void saveTitle(item.id)}
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-foreground/80 transition-colors hover:bg-foreground/[0.06] hover:text-foreground disabled:opacity-50"
-                                aria-label="Save title"
-                                title="Save title"
-                              >
-                                <Check size={12} strokeWidth={1.85} />
-                              </motion.button>
-                              <motion.button
-                                type="button"
-                                whileTap={{ scale: 0.96 }}
-                                onClick={cancelTitleEdit}
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/80 transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
-                                aria-label="Cancel title edit"
-                                title="Cancel title edit"
-                              >
-                                <X size={12} strokeWidth={1.85} />
-                              </motion.button>
-                            </>
-                          ) : (
-                            <motion.button
-                              type="button"
-                              whileTap={{ scale: 0.96 }}
-                              onClick={() => beginEditTitle(item)}
-                              className="-m-0.5 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
-                              aria-label="Edit title"
-                            >
-                              <Pencil size={12} strokeWidth={1.75} />
-                            </motion.button>
-                          )}
-                          <motion.button
-                            type="button"
-                            whileTap={{ scale: 0.96 }}
-                            disabled={deleteBusyId === item.id}
-                            onClick={() => void deleteItem(item.id)}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-destructive/85 transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
-                            aria-label="Delete link"
-                            title="Delete link"
-                          >
-                            <Trash2 size={12} strokeWidth={1.75} />
-                          </motion.button>
-                        </div>
-                      </div>
-                      <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground antialiased">
-                        <span className="inline-flex items-center gap-1">
-                          <Play size={10} className="opacity-80" aria-hidden />
-                          Resume
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <motion.button
-                            type="button"
-                            whileTap={{ scale: 0.96 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              selectForDashboard(item);
-                            }}
-                            className="inline-flex h-7 items-center rounded-md px-2 text-xs font-medium text-foreground/90 transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
-                          >
-                            Watch on dashboard
-                          </motion.button>
-                          <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
-                          >
-                            Open
-                            <ExternalLink
-                              size={10}
-                              className="opacity-80"
-                              aria-hidden
-                            />
-                          </a>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
+          </div>
 
-              {items.length === 0 ? (
-                <div className="flex min-h-[10rem] items-center justify-center rounded-lg border border-dashed border-border/60 text-center">
-                  <p className="px-6 text-[11px] text-muted-foreground">
-                    No links yet. Add a YouTube URL above and it will appear
-                    here.
-                  </p>
-                </div>
-              ) : null}
+          {items.length === 0 ? (
+            <div className="flex min-h-[18rem] items-center justify-center rounded-2xl border border-dashed border-border/60 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] px-6 text-center">
+              <p className="max-w-md text-[13px] font-medium text-muted-foreground [text-wrap:pretty]">
+                No items in your library yet. Paste a YouTube video or playlist URL above to add your first lecture!
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {items.map((item) => {
+                const isPlaylist = item.mediaKind === 'PLAYLIST';
+                return (
+                  <motion.div
+                    key={item.id}
+                    whileHover={{ y: -4, scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={() => void openItem(item.id)}
+                    className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/45 shadow-ambient-sm transition-all hover:border-cta/40 hover:bg-card/75 cursor-pointer"
+                  >
+                    {/* Thumbnail Preview */}
+                    <div className="relative aspect-video w-full overflow-hidden bg-muted/20">
+                      {item.videoId ? (
+                        <img
+                          src={`https://i.ytimg.com/vi/${item.videoId}/hqdefault.jpg`}
+                          alt=""
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div 
+                          className="flex h-full w-full items-center justify-center bg-gradient-to-br"
+                          style={{ 
+                            backgroundImage: `linear-gradient(135deg, ${item.area?.color || '#6366f1'}33, ${item.area?.color || '#6366f1'}0a)`
+                          }}
+                        >
+                          <span 
+                            className="flex h-12 w-12 items-center justify-center rounded-full bg-background/80 text-foreground/80 shadow-md backdrop-blur-sm"
+                            style={{ color: item.area?.color || '#6366f1' }}
+                          >
+                            <Youtube size={22} className="opacity-90 shrink-0 text-red-500" />
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-black/30 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-cta text-white shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-200">
+                          <Play size={16} fill="currentColor" />
+                        </span>
+                      </div>
+
+                      {/* Capsules */}
+                      <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                        <span className="rounded-[4px] bg-black/60 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                          {item.mediaKind}
+                        </span>
+                        {item.area && (
+                          <span 
+                            className="rounded-[4px] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white backdrop-blur-sm"
+                            style={{ background: `${item.area.color}dd` }}
+                          >
+                            {item.area.name}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Progress Overlay for Playlist */}
+                      {isPlaylist && (
+                        <div className="absolute bottom-2 right-2 rounded-[4px] bg-cta text-cta-foreground px-2 py-0.5 text-[9px] font-bold backdrop-blur-sm">
+                          {getProgressText(item)}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex flex-1 flex-col p-3.5">
+                      <h3 className="line-clamp-2 text-[12px] font-bold text-foreground group-hover:text-cta leading-snug">
+                        {displayLabel(item)}
+                      </h3>
+                      <div className="mt-auto pt-3.5 flex items-center justify-between text-[10px] text-muted-foreground">
+                        <span className="truncate max-w-[130px] tabular-nums">
+                          {item.url}
+                        </span>
+                        <span>
+                          {formatItemDate(item.updatedAtIso)}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* 3. Detail Mode (Active player and side progress/links) */
+        <div className="flex flex-col gap-4">
+          {/* Back Button bar */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setActiveId(null)}
+                className="inline-flex h-8 items-center gap-1 rounded-lg border border-border/70 bg-card px-3 text-[11px] font-bold text-foreground hover:bg-muted transition-all cursor-pointer shadow-sm"
+              >
+                ← Back to Library
+              </button>
+              <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                Viewing: <strong className="text-foreground">{active && displayLabel(active)}</strong>
+              </span>
             </div>
           </div>
-        </section>
-      </div>
 
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2.2fr)_minmax(18rem,1fr)] lg:items-start lg:gap-5">
+            {/* Left Column (Video Player + metadata card) */}
+            <div className="min-w-0 antialiased flex flex-col gap-4">
+              <YouTubeEmbedPanel
+                embedUrl={
+                  currentEmbedIndex !== null && playlistVideos[currentEmbedIndex]
+                    ? `https://www.youtube.com/embed/${playlistVideos[currentEmbedIndex].videoId}?list=${active?.playlistId}&rel=0&modestbranding=1`
+                    : (active?.embedUrl ?? null)
+                }
+                large
+                emptyHint="Add a YouTube URL above to watch here."
+              />
+
+              {/* Active Metadata Card */}
+              {active && (
+                <div className="rounded-2xl border border-border/45 bg-card p-4 shadow-ambient-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      {editingTitleId === active.id ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            autoFocus
+                            value={draftTitle}
+                            onChange={(e) => setDraftTitle(e.target.value)}
+                            maxLength={200}
+                            disabled={titleBusyId === active.id}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') void saveTitle(active.id);
+                              if (e.key === 'Escape') cancelTitleEdit();
+                            }}
+                            className="w-full rounded-md border border-border/60 bg-muted/25 px-2 py-1 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-ring/45"
+                          />
+                          <button
+                            onClick={() => void saveTitle(active.id)}
+                            className="p-1 rounded text-foreground/80 hover:bg-muted"
+                          >
+                            <Check size={14} />
+                          </button>
+                          <button
+                            onClick={cancelTitleEdit}
+                            className="p-1 rounded text-muted-foreground hover:bg-muted"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-[13px] font-bold text-foreground truncate">
+                            {displayLabel(active)}
+                          </h2>
+                          <button
+                            onClick={() => beginEditTitle(active)}
+                            className="text-muted-foreground/75 hover:text-foreground p-0.5"
+                          >
+                            <Pencil size={11} />
+                          </button>
+                        </div>
+                      )}
+                      
+                      <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
+                        {active.area && (
+                          <span className="inline-flex items-center gap-1 rounded-md border border-border/40 px-1.5 py-0.5">
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ background: active.area.color }} />
+                            {active.area.name}
+                          </span>
+                        )}
+                        <span className="truncate max-w-[200px]">{active.url}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => selectForDashboard(active)}
+                        className="inline-flex h-8 items-center rounded-lg px-2.5 text-[11px] font-bold bg-cta/10 text-cta hover:bg-cta/20"
+                      >
+                        Watch on dashboard
+                      </button>
+                      <button
+                        onClick={() => void deleteItem(active.id)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/70 hover:bg-destructive/10 hover:text-destructive text-destructive/80"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column (Saved links + playlist progress viewer right below it) */}
+            <div className="flex flex-col gap-4">
+              <section className="rounded-2xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-3 shadow-float">
+                <div className="flex flex-col rounded-xl border border-black/[0.03] bg-card p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.58)] dark:border-white/[0.05]">
+                  <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-muted-foreground antialiased">
+                    Saved links
+                  </p>
+                  <div className="space-y-2 pr-0.5">
+                    <AnimatePresence initial={false}>
+                      {items.map((item) => {
+                        const activeRow = item.id === active?.id;
+                        const rowClass = activeRow
+                          ? 'border-cta/40 bg-cta/10'
+                          : 'border-border/50 bg-card/65 hover:bg-accent/55';
+                        return (
+                          <motion.div
+                            key={item.id}
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
+                              if (editingTitleId === item.id) return;
+                              if (isInteractiveTarget(e.target)) return;
+                              void openItem(item.id);
+                            }}
+                            onKeyDown={(e) => {
+                              if (editingTitleId === item.id) return;
+                              if (e.target !== e.currentTarget) return;
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                void openItem(item.id);
+                              }
+                            }}
+                            className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors cursor-pointer ${rowClass}`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex min-w-0 items-center gap-1.5 text-xs font-semibold leading-snug tracking-tight text-foreground antialiased">
+                                  <Youtube size={12} className="shrink-0 text-red-500" />
+                                  <span className="min-w-0 truncate">{displayLabel(item)}</span>
+                                </div>
+                                <div className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground">
+                                  {item.area && (
+                                    <span className="inline-flex items-center gap-0.5">
+                                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: item.area.color }} />
+                                      {item.area.name}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </section>
+
+              {/* Playlist Progress Viewer */}
+              {active && active.mediaKind === 'PLAYLIST' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-2xl border border-border/45 bg-card p-4 shadow-ambient-sm"
+                >
+                  <div className="flex flex-col gap-2 border-b border-border/40 pb-3 mb-3">
+                    <div>
+                      <h3 className="text-[12px] font-bold text-foreground">
+                        Playlist Progress Viewer
+                      </h3>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Track completion and jump directly to any video.
+                      </p>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-[9.5px] font-semibold text-cta bg-cta/10 px-2 py-0.5 rounded-full">
+                        {completedIndices.length} of {playlistVideos.length} completed ({playlistVideos.length > 0 ? Math.round((completedIndices.length / playlistVideos.length) * 100) : 0}%)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="w-full bg-muted dark:bg-border/20 h-1.5 rounded-full mb-4 overflow-hidden">
+                    <motion.div
+                      className="bg-cta h-full rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${playlistVideos.length > 0 ? (completedIndices.length / playlistVideos.length) * 100 : 0}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+
+                  {/* Videos list */}
+                  <div className="space-y-1.5 max-h-[22rem] overflow-y-auto pr-1">
+                    {loadingVideos ? (
+                      <div className="flex h-20 items-center justify-center text-[10px] text-muted-foreground">
+                        Loading playlist videos...
+                      </div>
+                    ) : (
+                      playlistVideos.map((video, idx) => {
+                        const isCompleted = completedIndices.includes(idx);
+                        const isPlayingThis = currentEmbedIndex === idx;
+                        return (
+                          <div
+                            key={idx}
+                            className={`flex items-center justify-between gap-2 p-2 rounded-lg border border-border/45 transition-colors ${
+                              isPlayingThis ? 'border-cta/40 bg-cta/5' : 'bg-muted/10 hover:bg-muted/30'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              {/* Completion Checkbox */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = isCompleted
+                                    ? completedIndices.filter((x) => x !== idx)
+                                    : [...completedIndices, idx];
+                                  setCompletedIndices(next);
+                                  localStorage.setItem(`swm:playlist-completed-${active.id}`, JSON.stringify(next));
+                                }}
+                                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all ${
+                                  isCompleted ? 'bg-cta border-cta text-white' : 'border-border/80 hover:border-cta'
+                                }`}
+                              >
+                                {isCompleted && <Check size={8} strokeWidth={4} />}
+                              </button>
+                              <span className={`text-[11px] font-medium truncate ${isCompleted ? 'line-through text-muted-foreground/55' : 'text-foreground/85'}`}>
+                                {video.title}
+                              </span>
+                              {video.durationText && (
+                                <span className="text-[9px] text-muted-foreground bg-muted/70 px-1 py-0.2 rounded shrink-0">
+                                  {video.durationText}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <button
+                              type="button"
+                              onClick={() => setCurrentEmbedIndex(idx)}
+                              className={`flex h-6 items-center justify-center rounded-md px-2 text-[10px] font-bold transition-all ${
+                                isPlayingThis
+                                  ? 'bg-cta text-white'
+                                  : 'bg-card border border-border/70 text-foreground hover:bg-muted'
+                              }`}
+                            >
+                              <Play size={8} fill={isPlayingThis ? 'currentColor' : 'none'} />
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Ambient Tones Sound Library */}
       <section
         className="rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-4 sm:p-5
           shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)] antialiased"

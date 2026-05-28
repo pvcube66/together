@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 import { buildTrustedAuthOrigins } from "./lib/auth-urls";
+import withBundleAnalyzer from "@next/bundle-analyzer";
+
+const bundleAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
 
 function hostFromUrl(value?: string) {
   if (!value || value.includes("*")) return null;
@@ -57,9 +62,21 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: "/home", destination: "/dashboard", permanent: true }];
   },
+
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.performance = {
+        ...config.performance,
+        hints: "warning",
+        maxEntrypointSize: 300000,
+        maxAssetSize: 300000,
+      };
+    }
+    return config;
+  },
 };
 
-export default nextConfig;
+export default bundleAnalyzer(nextConfig);
 
 // — next.config.ts: Next.js config — better-auth as server external, optional allowedDevOrigins, /home → /dashboard.
 

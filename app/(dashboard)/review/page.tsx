@@ -5,7 +5,7 @@ import ReviewClient from "./review-client";
 
 type AreaInfo = { id: string; name: string; color: string; icon: string | null };
 
-export default async function ReviewPage() {
+export default async function ReviewAndRecordsPage() {
   const session = await requireSession();
   const userId = session.user.id;
   const now = new Date();
@@ -14,43 +14,126 @@ export default async function ReviewPage() {
   const weekEnd = new Date(weekStart.getTime() + 7 * 86_400_000);
 
   const [
-    focusSessions,
-    probCounts,
-    runsAgg,
-    checkins,
-    tasksCompleted,
+    // 1. Weekly Focus Sessions
+    focusSessionsThisWeek,
+    // 2. Weekly Activity Logs
+    activityLogsThisWeek,
+    // 3. Weekly Tasks completed
+    tasksCompletedThisWeek,
+    // 4. All user areas
     areas,
+    // 5. All-Time Streak
+    streak,
+    // 6. All-Time Best study day
+    bestDayStats,
+    // 7. All-Time Longest focus session
+    longestSession,
+    // 8. All-Time Total focus minutes
+    totalFocusMinutesData,
+    // 9. All-Time Total activity count
+    totalActivitiesCount,
+    // 10. All-Time Average rating
+    ratingAggregation,
+    // 11. All-Time Longest logged activity
+    longestActivity,
+    // 12. All-Time Best rated activity
+    bestRatingActivity,
   ] = await Promise.all([
+    // Weekly Focus Sessions
     prisma.focusSession.findMany({
       where: { userId, completedAt: { gte: weekStart, lt: weekEnd } },
       select: { durationMin: true, areaId: true },
     }),
-    prisma.problemLog.groupBy({
-      by: ["difficulty"],
-      where: { userId, solvedAt: { gte: weekStart, lt: weekEnd } },
-      _count: true,
-    }),
-    prisma.runLog.aggregate({
-      where: { userId, runDate: { gte: weekStart, lt: weekEnd } },
-      _count: true,
-      _sum: { distanceKm: true, durationMin: true },
-    }),
-    prisma.dailyCheckin.findMany({
+
+    // Weekly Activity Logs
+    prisma.activityLog.findMany({
       where: { userId, date: { gte: weekStart, lt: weekEnd } },
-      select: { moodScore: true, energyScore: true, focusScore: true },
+      select: { durationMin: true, rating: true },
     }),
+
+    // Weekly Tasks completed
     prisma.task.count({
       where: { userId, isCompleted: true, updatedAt: { gte: weekStart, lt: weekEnd } },
     }),
+
+    // Areas
     prisma.area.findMany({
       where: { userId },
       select: { id: true, name: true, color: true, icon: true },
     }) as Promise<AreaInfo[]>,
+
+    // Streak
+    prisma.streak.findUnique({
+      where: { userId },
+      select: { longestStreak: true, currentStreak: true },
+    }),
+
+    // Best study day
+    prisma.dailyStats.aggregate({
+      where: { userId },
+      _max: { totalMinutes: true },
+    }),
+
+    // Longest focus session
+    prisma.focusSession.findFirst({
+      where: { userId },
+      orderBy: { durationMin: "desc" },
+      select: { durationMin: true, completedAt: true },
+    }),
+
+    // Total focus minutes
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { lifetimeFocusMinutes: true },
+    }),
+
+    // Total activity count
+    prisma.activityLog.count({ where: { userId } }),
+
+    // Average rating
+    prisma.activityLog.aggregate({
+      where: { userId, rating: { not: null } },
+      _avg: { rating: true },
+    }),
+
+    // Longest logged activity
+    prisma.activityLog.findFirst({
+      where: { userId, durationMin: { not: null } },
+      orderBy: { durationMin: "desc" },
+      select: {
+        durationMin: true,
+        title: true,
+        date: true,
+        area: { select: { name: true, color: true } },
+      },
+    }),
+
+    // Best rated activity
+    prisma.activityLog.findFirst({
+      where: { userId, rating: { not: null } },
+      orderBy: { rating: "desc" },
+      select: {
+        rating: true,
+        title: true,
+        date: true,
+        area: { select: { name: true, color: true } },
+      },
+    }),
   ]);
 
-  // Hours by area
+  // Weekly stats compilation
+  const weeklyStudyMinutes = focusSessionsThisWeek.reduce((s, f) => s + f.durationMin, 0);
+  const weeklyActivitiesCount = activityLogsThisWeek.length;
+  const weeklyActivityMinutes = activityLogsThisWeek.reduce((s, l) => s + (l.durationMin || 0), 0);
+  
+  const weeklyRatedLogs = activityLogsThisWeek.filter((log) => log.rating !== null);
+  const weeklyAvgProductivity = weeklyRatedLogs.length > 0
+    ? Math.round((weeklyRatedLogs.reduce((s, l) => s + (l.rating || 0), 0) / weeklyRatedLogs.length) * 10) / 10
+    : 0;
+
+  // Hours by area (weekly)
   const areaMinutesMap = new Map<string, number>();
-  for (const s of focusSessions) {
+  for (const s of focusSessionsThisWeek) {
     const key = s.areaId ?? "__none";
     areaMinutesMap.set(key, (areaMinutesMap.get(key) ?? 0) + s.durationMin);
   }
@@ -71,44 +154,76 @@ export default async function ReviewPage() {
     });
   }
 
-  const problemsByDifficulty = {
-    EASY: probCounts.find((p) => p.difficulty === "EASY")?._count ?? 0,
-    MEDIUM: probCounts.find((p) => p.difficulty === "MEDIUM")?._count ?? 0,
-    HARD: probCounts.find((p) => p.difficulty === "HARD")?._count ?? 0,
-  };
-  const totalProblems = problemsByDifficulty.EASY + problemsByDifficulty.MEDIUM + problemsByDifficulty.HARD;
+  // All-time best week (focus minutes)
+  const allDailyStats = await prisma.dailyStats.findMany({
+    where: { userId },
+    select: { date: true, totalMinutes: true },
+    orderBy: { date: "asc" },
+  });
 
-  const totalStudyMinutes = focusSessions.reduce((s, f) => s + f.durationMin, 0);
-  const avgMood = checkins.length > 0
-    ? Math.round(checkins.reduce((s, c) => s + c.moodScore, 0) / checkins.length * 10) / 10
-    : 0;
-  const avgEnergy = checkins.length > 0
-    ? Math.round(checkins.reduce((s, c) => s + c.energyScore, 0) / checkins.length * 10) / 10
-    : 0;
-  const avgFocus = checkins.length > 0
-    ? Math.round(checkins.reduce((s, c) => s + c.focusScore, 0) / checkins.length * 10) / 10
+  let bestWeekMinutes = 0;
+  let bestWeekLabel: string | null = null;
+
+  if (allDailyStats.length > 0) {
+    const weekMap = new Map<string, number>();
+    for (const row of allDailyStats) {
+      const d = new Date(row.date);
+      const yearStart = new Date(d.getFullYear(), 0, 1);
+      const weekNum = Math.ceil((((d.getTime() - yearStart.getTime()) / 86_400_000) + yearStart.getDay() + 1) / 7);
+      const key = `${d.getFullYear()}-W${String(weekNum).padStart(2, "0")}`;
+      weekMap.set(key, (weekMap.get(key) ?? 0) + row.totalMinutes);
+    }
+    for (const [week, mins] of weekMap) {
+      if (mins > bestWeekMinutes) {
+        bestWeekMinutes = mins;
+        bestWeekLabel = week;
+      }
+    }
+  }
+
+  const allTimeAvgRating = ratingAggregation._avg.rating
+    ? Math.round(ratingAggregation._avg.rating * 10) / 10
     : 0;
 
   return (
     <ReviewClient
+      // Weekly review data
       weekStart={weekStart.toISOString().slice(0, 10)}
       weekEnd={weekEnd.toISOString().slice(0, 10)}
-      totalStudyHours={Math.round((totalStudyMinutes / 60) * 10) / 10}
-      totalStudyMinutes={totalStudyMinutes}
-      totalSessions={focusSessions.length}
+      weeklyStudyHours={Math.round((weeklyStudyMinutes / 60) * 10) / 10}
+      weeklyStudyMinutes={weeklyStudyMinutes}
+      weeklySessions={focusSessionsThisWeek.length}
       hoursByArea={hoursByArea}
-      problemsByDifficulty={problemsByDifficulty}
-      totalProblems={totalProblems}
-      totalRuns={runsAgg._count}
-      totalDistance={Math.round((runsAgg._sum.distanceKm ?? 0) * 100) / 100}
-      totalDuration={runsAgg._sum.durationMin ?? 0}
-      checkinDays={checkins.length}
-      avgMood={avgMood}
-      avgEnergy={avgEnergy}
-      avgFocus={avgFocus}
-      tasksCompleted={tasksCompleted}
+      weeklyActivities={weeklyActivitiesCount}
+      weeklyAvgProductivity={weeklyAvgProductivity}
+      weeklyActivityMinutes={weeklyActivityMinutes}
+      tasksCompleted={tasksCompletedThisWeek}
+      
+      // All-time scoreboard data
+      longestStreak={streak?.longestStreak ?? 0}
+      currentStreak={streak?.currentStreak ?? 0}
+      bestDayMinutes={bestDayStats._max.totalMinutes ?? 0}
+      bestWeekMinutes={Math.round((bestWeekMinutes / 60) * 10) / 10}
+      bestWeekLabel={bestWeekLabel}
+      longestSessionMin={longestSession?.durationMin ?? 0}
+      longestSessionDate={longestSession?.completedAt.toISOString().slice(0, 10) ?? null}
+      totalFocusMinutes={totalFocusMinutesData?.lifetimeFocusMinutes ?? 0}
+      totalActivities={totalActivitiesCount}
+      allTimeAverageRating={allTimeAvgRating}
+      longestActivity={longestActivity ? {
+        durationMin: longestActivity.durationMin!,
+        title: longestActivity.title,
+        date: longestActivity.date.toISOString(),
+        areaName: longestActivity.area.name,
+        areaColor: longestActivity.area.color,
+      } : null}
+      bestRatingActivity={bestRatingActivity ? {
+        rating: bestRatingActivity.rating!,
+        title: bestRatingActivity.title,
+        date: bestRatingActivity.date.toISOString(),
+        areaName: bestRatingActivity.area.name,
+        areaColor: bestRatingActivity.area.color,
+      } : null}
     />
   );
 }
-
-// — Weekly Review page: aggregates all data sources for the current week.

@@ -1,4 +1,4 @@
-import { io, type Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 
 type ServerToClientEvents = {
   presence: (payload: {
@@ -143,7 +143,7 @@ async function getSocketToken() {
   }
 }
 
-export function getSocket() {
+export async function getSocket(): Promise<StudySocket | null> {
   if (typeof window === 'undefined') return null;
   const socketUrl = getSocketUrl();
   if (!socketUrl) {
@@ -156,6 +156,7 @@ export function getSocket() {
   }
 
   if (!socketSingleton) {
+    const { io } = await import('socket.io-client');
     socketSingleton = io(socketUrl, {
       autoConnect: false,
       withCredentials: true,
@@ -184,16 +185,16 @@ export function getSocket() {
   return socketSingleton;
 }
 
-export function connectWithAuth() {
-  const socket = getSocket();
+export async function connectWithAuth(): Promise<StudySocket | null> {
+  const socket = await getSocket();
   if (!socket) return null;
   if (!socket.connected) socket.connect();
 
   return socket;
 }
 
-export function requestPresenceRefresh() {
-  const socket = connectWithAuth();
+export async function requestPresenceRefresh() {
+  const socket = await connectWithAuth();
   if (!socket) return;
   if (socket.connected) {
     socket.emit('presence:refresh');

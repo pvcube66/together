@@ -18,6 +18,25 @@ export default function VideoPlayerWrapper() {
   useEffect(() => {
     const sync = () => setSelection(readDashboardLecture());
     sync();
+
+    // Fetch fallback from library if no explicit selection exists
+    if (!readDashboardLecture()) {
+      fetch('/api/library')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.items && data.items.length > 0) {
+            const latest = data.items[0];
+            setSelection({
+              id: latest.id,
+              embedUrl: latest.embedUrl,
+              url: latest.url,
+              label: latest.title || `Video ${latest.videoId || ''}`,
+            });
+          }
+        })
+        .catch(() => {});
+    }
+
     window.addEventListener(DASHBOARD_LECTURE_CHANGED_EVENT, sync);
     window.addEventListener("storage", sync);
     return () => {

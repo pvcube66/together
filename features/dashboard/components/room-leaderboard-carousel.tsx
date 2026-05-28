@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'motion/react';
-import { ChevronLeft, ChevronRight, Video, VideoOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Video, VideoOff, ArrowRight, ArrowUpRight } from 'lucide-react';
 import AvatarWithFallback from '@/components/ui/avatar-with-fallback';
 
 export type RoomTimerMember = {
@@ -127,33 +128,55 @@ export default function RoomLeaderboardCarousel({
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <div className="flex items-center justify-between gap-2 border-b border-border/50 px-2.5 pb-2 pt-2.5">
-        <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold tracking-tight text-foreground [text-wrap:balance]">
-            {current.roomName}
-          </p>
+      <div className="flex items-center justify-between gap-2 border-b border-border/50 px-3 pb-2.5 pt-2.5">
+        <div className="min-w-0 flex-1 flex items-center gap-2">
+          <Link
+            href={`/room/${current.roomCode}`}
+            className="group/title inline-flex items-center gap-1.5 truncate text-[13px] font-bold tracking-tight text-foreground hover:text-cta transition-colors"
+          >
+            <span className="truncate">{current.roomName}</span>
+            <span className="text-[10.5px] text-muted-foreground/60 font-mono tracking-tight shrink-0">
+              ({current.roomCode})
+            </span>
+            <ArrowUpRight size={12} className="opacity-0 group-hover/title:opacity-100 transition-opacity text-muted-foreground" />
+          </Link>
+          {current.members.some((m) => m.active) && (
+            <span
+              className="flex h-2 w-2 shrink-0 rounded-full bg-emerald-500 animate-pulse"
+              title="Active study session in progress!"
+            />
+          )}
         </div>
-        <div className="flex items-center gap-1.5">
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.96 }}
-            onClick={prevBoard}
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-card/70
-              text-muted-foreground transition-colors duration-150 hover:bg-accent/70 hover:text-foreground"
-            aria-label="Previous room"
+        <div className="flex items-center gap-2.5 shrink-0">
+          <Link
+            href={`/room/${current.roomCode}`}
+            className="app-cta-surface inline-flex h-7 items-center gap-1 rounded-md px-2.5 py-1 text-[10px] font-bold tracking-wide text-cta-foreground shadow-sm transition-all hover:scale-[1.02]"
           >
-            <ChevronLeft size={13} strokeWidth={1.8} />
-          </motion.button>
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.96 }}
-            onClick={nextBoard}
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-card/70
-              text-muted-foreground transition-colors duration-150 hover:bg-accent/70 hover:text-foreground"
-            aria-label="Next room"
-          >
-            <ChevronRight size={13} strokeWidth={1.8} />
-          </motion.button>
+            <span>Enter Room</span>
+            <ArrowRight size={10} strokeWidth={2.5} />
+          </Link>
+          <div className="flex items-center gap-1">
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.96 }}
+              onClick={prevBoard}
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-card/70
+                text-muted-foreground transition-colors duration-150 hover:bg-accent/70 hover:text-foreground"
+              aria-label="Previous room"
+            >
+              <ChevronLeft size={13} strokeWidth={1.8} />
+            </motion.button>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.96 }}
+              onClick={nextBoard}
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-card/70
+                text-muted-foreground transition-colors duration-150 hover:bg-accent/70 hover:text-foreground"
+              aria-label="Next room"
+            >
+              <ChevronRight size={13} strokeWidth={1.8} />
+            </motion.button>
+          </div>
         </div>
       </div>
 

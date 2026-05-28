@@ -39,6 +39,8 @@ export default async function TodoPage() {
       }))}
       initialDdayDate={settings.todoDdayDate}
       initialDdayTitle={settings.todoDdayTitle}
+      initialWeeklyGoal={settings.todoWeeklyGoal}
+      initialMonthlyGoal={settings.todoMonthlyGoal}
     />
   );
 }

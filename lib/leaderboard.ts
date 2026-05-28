@@ -223,6 +223,31 @@ export async function getUserRankAndScore(
   const now = new Date();
   const userIds = filter?.userIds;
   if (userIds && !userIds.includes(userId)) return null;
+
+  // Blazing fast Redis optimization when no custom user filtering is active
+  if (redis && !userIds) {
+    const key = lbRedisKey(period, now);
+    try {
+      const exists = await redis.exists(key);
+      if (exists) {
+        const [rankIdx, scoreStr, card] = await Promise.all([
+          redis.zrevrank(key, userId),
+          redis.zscore(key, userId),
+          redis.zcard(key),
+        ]);
+        if (scoreStr !== null) {
+          return {
+            rank: (rankIdx ?? 0) + 1,
+            totalMinutes: Number(scoreStr),
+          };
+        }
+        return { rank: card + 1, totalMinutes: 0 };
+      }
+    } catch (err) {
+      console.warn('[leaderboard] Redis rank lookup failed; falling back to DB', err);
+    }
+  }
+
   const scores = await getAllScoresForPeriod(period, now, filter);
   const idx = scores.findIndex((entry) => entry.userId === userId);
   if (idx >= 0) {

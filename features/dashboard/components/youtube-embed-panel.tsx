@@ -1,19 +1,8 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Maximize2, Plus, X } from 'lucide-react';
-import {
-  PANEL_SHADOW,
-  OUTER_RADIUS,
-  GAP,
-  INNER_RADIUS,
-  SCREW_SIZE,
-  SCREW_INSET,
-  Screw,
-} from './panel-primitives';
+import { Maximize2, X, BookOpen, ArrowRight } from 'lucide-react';
 import { SPRING_HOVER } from '@/lib/ui-motion';
-
-const EMPTY_TOOLTIP = 'start watching a youtube video';
 
 type Props = {
   embedUrl: string | null;
@@ -39,7 +28,6 @@ export default function YouTubeEmbedPanel({
   onEnterFocus,
   focusMode = false,
 }: Props) {
-  const screwInset = SCREW_INSET;
   const isLibraryLayout = large;
   const showDashboardLectureEmpty = !isLibraryLayout && !!onWatchLecture;
 
@@ -53,47 +41,22 @@ export default function YouTubeEmbedPanel({
     >
       <motion.div
         className={
-          'relative flex w-full flex-col border border-black/[0.035] bg-[color:var(--panel-texture-bg)] ring-1 ring-inset ring-black/[0.035] ' +
+          'relative flex w-full flex-col border border-border/40 bg-card p-4 rounded-2xl shadow-ambient-md ' +
           (isLibraryLayout
             ? 'min-w-0 shrink-0'
             : 'h-full min-h-0 min-w-0 max-h-full w-full shrink-0 sm:max-w-[min(100%,94vw)] lg:w-[min(100%,90%)]')
         }
-        style={{
-          borderRadius: `${OUTER_RADIUS}px`,
-          padding: `${GAP}px`,
-          boxShadow: PANEL_SHADOW,
-        }}
         whileHover={
-          isLibraryLayout ? undefined : { y: -1, rotate: 0.06, scale: 1.002 }
+          isLibraryLayout ? undefined : { y: -2, scale: 1.002 }
         }
         transition={SPRING_HOVER}
       >
-        <Screw
-          className="absolute"
-          style={{
-            top: screwInset,
-            left: screwInset,
-            width: SCREW_SIZE,
-            height: SCREW_SIZE,
-          }}
-        />
-        <Screw
-          className="absolute"
-          style={{
-            top: screwInset,
-            right: screwInset,
-            width: SCREW_SIZE,
-            height: SCREW_SIZE,
-          }}
-        />
-
         <div
           className={
             isLibraryLayout
-              ? 'relative aspect-video w-full overflow-hidden bg-neutral-950'
-              : 'relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-neutral-950'
+              ? 'relative aspect-video w-full overflow-hidden bg-neutral-950 border border-border/10 rounded-xl'
+              : 'relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-neutral-950 rounded-xl border border-border/10 shadow-[inset_0_1px_3px_rgba(0,0,0,0.4)]'
           }
-          style={{ borderRadius: `${INNER_RADIUS}px` }}
         >
           {embedUrl && onClearLecture && !focusMode && (
             <motion.button
@@ -118,6 +81,7 @@ export default function YouTubeEmbedPanel({
               <Maximize2 size={15} strokeWidth={1.9} />
             </motion.button>
           )}
+          
           {embedUrl ? (
             <iframe
               src={embedUrl}
@@ -132,25 +96,49 @@ export default function YouTubeEmbedPanel({
               allowFullScreen
             />
           ) : showDashboardLectureEmpty ? (
-            <div className="flex h-full w-full flex-1 items-center justify-center">
-              <button
-                type="button"
-                onClick={onWatchLecture}
-                title={EMPTY_TOOLTIP}
-                aria-label={EMPTY_TOOLTIP}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-white/22 text-white/88 transition-colors hover:border-white/45 hover:bg-white/10 hover:text-white"
-              >
-                <Plus className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-              </button>
+            <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center relative overflow-hidden min-h-[220px]">
+              {/* Background radiant bloom using theme adaptive variables */}
+              <div className="absolute inset-0 bg-gradient-to-br from-card via-muted/30 to-card z-0" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,color-mix(in_oklch,var(--color-cta)_8%,transparent)_0%,transparent_75%)] animate-pulse z-0" style={{ animationDuration: '6s' }} />
+              
+              <div className="relative z-10 flex flex-col items-center max-w-[280px] sm:max-w-xs md:max-w-md">
+                {/* Glowing Icon Frame matching rest of design */}
+                <motion.div
+                  whileHover={{ scale: 1.08, rotate: 5 }}
+                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-cta/15 border border-cta/30 text-cta shadow-[0_0_15px_color-mix(in_oklch,var(--color-cta)_15%,transparent)]"
+                >
+                  <BookOpen size={24} className="animate-pulse" style={{ animationDuration: '3s' }} />
+                </motion.div>
+
+                <h3 className="text-[14px] sm:text-[15px] font-bold text-foreground tracking-tight text-balance leading-snug">
+                  Start Your Next Study Session
+                </h3>
+                
+                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground text-pretty">
+                  Select a lecture from the study library to track your focus hours and watch seamlessly right on your dashboard.
+                </p>
+
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={onWatchLecture}
+                  className="app-cta-surface mt-5 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-[11px] font-bold tracking-wide text-cta-foreground shadow-lg transition-transform"
+                >
+                  <span>Browse Library</span>
+                  <ArrowRight size={12} strokeWidth={2.5} />
+                </motion.button>
+              </div>
             </div>
           ) : emptyHint ? (
-            <p className="max-w-[20rem] px-4 text-center text-xs leading-snug text-white/55 text-balance antialiased">
+            <p className="max-w-[20rem] px-4 text-center text-xs leading-snug text-muted-foreground/75 text-balance antialiased">
               {emptyHint}
             </p>
           ) : null}
+          
           {embedUrl && activeLabel && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/35 to-transparent px-3 pb-2.5 pt-8 text-center">
-              <p className="truncate text-[10.5px] text-white/85">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-2.5 pt-8 text-center">
+              <p className="truncate text-[10.5px] text-white/90 font-medium font-sans">
                 {activeLabel}
               </p>
             </div>

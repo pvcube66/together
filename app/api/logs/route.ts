@@ -6,32 +6,27 @@ import { parseRequestJson } from "@/lib/api";
 import { limiters, enforce } from "@/lib/ratelimit";
 
 const listQuerySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(100).default(30),
+  areaId: z.string().optional(),
   cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(30),
 });
 
 const createSchema = z.object({
-  date: z.string().datetime(),
-  moodScore: z.number().int().min(1).max(10),
-  energyScore: z.number().int().min(1).max(10),
-  focusScore: z.number().int().min(1).max(10),
-  sleepHours: z.number().min(0).max(24).optional().nullable(),
-  wins: z.string().trim().max(2000).optional().nullable(),
-  blockers: z.string().trim().max(2000).optional().nullable(),
+  title: z.string().trim().min(1).max(300),
   notes: z.string().trim().max(5000).optional().nullable(),
-  areaId: z.string().optional().nullable(),
+  durationMin: z.number().int().min(0).max(1440).optional().nullable(),
+  rating: z.number().int().min(1).max(10).optional().nullable(),
+  date: z.string().datetime().optional(),
+  areaId: z.string().min(1),
 });
 
-const LIST_SELECT = {
+const SELECT_FIELDS = {
   id: true,
-  date: true,
-  moodScore: true,
-  energyScore: true,
-  focusScore: true,
-  sleepHours: true,
-  wins: true,
-  blockers: true,
+  title: true,
   notes: true,
+  durationMin: true,
+  rating: true,
+  date: true,
   areaId: true,
   area: { select: { id: true, name: true, color: true, icon: true } },
   createdAt: true,
@@ -44,23 +39,25 @@ export const GET = withApi(async (request: Request) => {
   const url = new URL(request.url);
 
   const parsed = listQuerySchema.safeParse({
-    limit: url.searchParams.get("limit") ?? undefined,
+    areaId: url.searchParams.get("areaId") ?? undefined,
     cursor: url.searchParams.get("cursor") ?? undefined,
+    limit: url.searchParams.get("limit") ?? undefined,
   });
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid query params", issues: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { limit, cursor } = parsed.data;
+  const { areaId, limit, cursor } = parsed.data;
 
-  const items = await prisma.dailyCheckin.findMany({
+  const items = await prisma.activityLog.findMany({
     where: {
       userId: session.user.id,
+      ...(areaId ? { areaId } : {}),
       ...(cursor ? { id: { lt: cursor } } : {}),
     },
     orderBy: { date: "desc" },
     take: limit + 1,
-    select: LIST_SELECT,
+    select: SELECT_FIELDS,
   });
 
   const hasMore = items.length > limit;
@@ -85,23 +82,25 @@ export const POST = withApi(async (request: Request) => {
   const body = await parseRequestJson(request, createSchema);
   if (!body.success) return body.response;
 
-  const { date, moodScore, energyScore, focusScore, sleepHours, wins, blockers, notes, areaId } = body.data;
-  const dayStart = new Date(date);
-  dayStart.setHours(0, 0, 0, 0);
+  const { title, notes, durationMin, rating, date, areaId } = body.data;
 
-  const checkin = await prisma.dailyCheckin.upsert({
-    where: { userId_date: { userId: session.user.id, date: dayStart } },
-    update: { moodScore, energyScore, focusScore, sleepHours: sleepHours ?? null, wins: wins || null, blockers: blockers || null, notes: notes || null, areaId: areaId || null },
-    create: { userId: session.user.id, date: dayStart, moodScore, energyScore, focusScore, sleepHours: sleepHours ?? null, wins: wins || null, blockers: blockers || null, notes: notes || null, areaId: areaId || null },
-    select: LIST_SELECT,
+  const log = await prisma.activityLog.create({
+    data: {
+      title,
+      notes: notes || null,
+      durationMin: durationMin ?? null,
+      rating: rating ?? null,
+      date: date ? new Date(date) : new Date(),
+      areaId,
+      userId: session.user.id,
+    },
+    select: SELECT_FIELDS,
   });
 
   return NextResponse.json({
-    ...checkin,
-    date: checkin.date.toISOString(),
-    createdAt: checkin.createdAt.toISOString(),
-    updatedAt: checkin.updatedAt.toISOString(),
+    ...log,
+    date: log.date.toISOString(),
+    createdAt: log.createdAt.toISOString(),
+    updatedAt: log.updatedAt.toISOString(),
   }, { status: 201 });
 });
-
-// — GET: list check-ins (paginated, most recent first); POST: upsert today's check-in.

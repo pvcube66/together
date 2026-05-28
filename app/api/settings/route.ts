@@ -23,6 +23,8 @@ const patchSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
   todoDdayTitle: z.string().trim().max(120).optional(),
+  todoWeeklyGoal: z.number().int().min(1).max(30).optional(),
+  todoMonthlyGoal: z.number().int().min(5).max(100).optional(),
 });
 
 export const GET = withApi(async () => {
@@ -75,6 +77,12 @@ export const PATCH = withApi(async (request: Request) => {
       ...(data.todoDdayTitle !== undefined
         ? { todoDdayTitle: data.todoDdayTitle }
         : {}),
+      ...(data.todoWeeklyGoal !== undefined
+        ? { todoWeeklyGoal: data.todoWeeklyGoal }
+        : {}),
+      ...(data.todoMonthlyGoal !== undefined
+        ? { todoMonthlyGoal: data.todoMonthlyGoal }
+        : {}),
     },
     create: {
       userId: session.user.id,
@@ -108,6 +116,12 @@ export const PATCH = withApi(async (request: Request) => {
       ...(data.todoDdayTitle !== undefined
         ? { todoDdayTitle: data.todoDdayTitle }
         : {}),
+      ...(data.todoWeeklyGoal !== undefined
+        ? { todoWeeklyGoal: data.todoWeeklyGoal }
+        : {}),
+      ...(data.todoMonthlyGoal !== undefined
+        ? { todoMonthlyGoal: data.todoMonthlyGoal }
+        : {}),
     },
     select: {
       theme: true,
@@ -120,6 +134,8 @@ export const PATCH = withApi(async (request: Request) => {
       soloMode: true,
       todoDdayDate: true,
       todoDdayTitle: true,
+      todoWeeklyGoal: true,
+      todoMonthlyGoal: true,
     },
   });
 

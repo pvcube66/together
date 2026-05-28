@@ -64,3 +64,4 @@ sounds/*
 sounds/**
 sounds/**/*
 /skills-lock.json
+.omo/
