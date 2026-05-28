@@ -23,6 +23,8 @@ export const metadata: Metadata = {
   description: 'Study rooms, shared focus, and accountability.',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function RootLayout({
   children,
 }: Readonly<{

@@ -211,6 +211,7 @@ export function useRoomVideo({
   }, [createPeer, roomId, starting, stop]);
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let socket: any = null;
 
     const onOffer = async (payload: {

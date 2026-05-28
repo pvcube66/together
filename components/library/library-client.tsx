@@ -69,7 +69,7 @@ export default function LibraryClient({
 
   const [completedIndices, setCompletedIndices] = useState<number[]>([]);
   const [currentEmbedIndex, setCurrentEmbedIndex] = useState<number | null>(null);
-  const [playlistVideos, setPlaylistVideos] = useState<any[]>([]);
+  const [playlistVideos, setPlaylistVideos] = useState<Array<{videoId: string; title: string; durationText: string; thumbnailUrl: string}>>([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
 
   useEffect(() => {

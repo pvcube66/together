@@ -171,7 +171,7 @@ export default function AreasClient({
                 <Layers size={22} strokeWidth={1.2} />
               </div>
               <p className="max-w-md text-[13px] font-medium text-muted-foreground [text-wrap:pretty]">
-                Create areas to organize your work — DSA, Backend, Fitness, Core CS, Aptitude, whatever you're grinding.
+                Create areas to organize your work — DSA, Backend, Fitness, Core CS, Aptitude, whatever you&apos;re grinding.
               </p>
             </div>
           </motion.div>

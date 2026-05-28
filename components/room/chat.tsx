@@ -103,6 +103,7 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
   }, [markFailed, mergeMessage]);
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let socket: any = null;
 
     const onChatMessage = (payload: ChatMessage & { roomId?: string }) => {
