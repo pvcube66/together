@@ -6,7 +6,6 @@
   <p><strong>A polished, web-based collaborative focus and study environment.</strong></p>
 
   <p>
-    <a href="https://github.com/yourusername/ss-provider/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="License"></a>
     <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js"></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-Ready-blue?logo=typescript" alt="TypeScript"></a>
   </p>
@@ -30,16 +29,7 @@ Whether you're studying for exams or just need a quiet place to get work done al
 
 
 <div align="center">
-  <img width="1895" height="916" alt="dashboard-final" src="https://github.com/user-attachments/assets/54d8f949-b5bf-4857-8626-4ceb9990ab63" />
-
-</div>
-<br />
-<div align="center">  
-<img width="1914" height="933" alt="settings" src="https://github.com/user-attachments/assets/99df9931-5aa1-44f0-8d9b-9a092abb2fc4" />
-<img width="1903" height="919" alt="leaderboard-final" src="https://github.com/user-attachments/assets/faceaad7-24eb-40bb-9e08-962f4974781f" />
-<img width="1080" height="530" alt="room-final" src="https://github.com/user-attachments/assets/d0a41b15-91f8-4e6f-91aa-53284b6bef9d" />
-
-
+  <em>Screenshots removed</em>
 </div>
 
 ---

@@ -560,15 +560,7 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                             : 'text-foreground/65 hover:bg-accent/55 hover:text-foreground hover:translate-x-[0.5px]')
                         }
                       >
-                                        <div className="relative shrink-0">
-                          {active && (
-                            <motion.span
-                              layoutId="nav-active-dot"
-                              className="absolute -left-1.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full"
-                              style={{ background: 'var(--color-cta)' }}
-                              transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                            />
-                          )}
+                                        <div className="shrink-0">
                           <item.icon
                             size={15}
                             strokeWidth={active ? 2 : 1.6}

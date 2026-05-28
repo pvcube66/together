@@ -1,13 +1,14 @@
 'use client';
 
-import { Coffee, Menu, Play, Square } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Coffee, Menu, Play, Square, Timer } from 'lucide-react';
 import { useServerUserSettings } from '@/components/server-user-settings';
 import { motion, AnimatePresence } from 'motion/react';
 import { useMobileNav } from '@/components/mobile-nav-context';
 import { useSound } from '@/components/sound-provider';
 import { useStudyTimer } from '@/components/study-timer-provider';
+import StartSessionPopover from '@/components/timer/start-session-popover';
 import SoundToggle from '@/components/sound-toggle';
-import ThemeToggle from '@/components/theme-toggle';
 import ProfileDropdown from '@/components/profileDropdown';
 
 type UserLite = {
@@ -18,8 +19,10 @@ type UserLite = {
 
 export default function DashboardNavbar({ user }: { user: UserLite }) {
   const { openMobileNav, toggleMobileNav, mobileNavOpen } = useMobileNav();
-  const { active, redisAvailable, busy, toggle, pomodoroPhase, pomodoroSecondsRemaining, pomodoroCycleCount, skipBreak } = useStudyTimer();
+  const { active, redisAvailable, busy, toggle, pomodoroEnabled, pomodoroPhase, pomodoroSecondsRemaining, pomodoroCycleCount, pomodoroFocusMinutes, pomodoroBreakMinutes, skipBreak } = useStudyTimer();
   const settings = useServerUserSettings();
+  const startBtnRef = useRef<HTMLButtonElement>(null);
+  const [startPopoverOpen, setStartPopoverOpen] = useState(false);
 
   const ddayText = (() => {
     const date = settings?.todoDdayDate;
@@ -60,6 +63,30 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
         className="shadow-float relative z-[138] ml-auto flex w-fit max-w-[min(100%,20rem)] items-center gap-0.5 rounded-2xl border border-border/50 bg-card/92 py-1 pl-1 pr-1 backdrop-blur-md
           lg:ml-0"
       >
+        {/* Pomodoro indicator (always visible) */}
+        <div
+          className="relative flex h-10 min-h-[40px] w-10 min-w-[40px] items-center justify-center rounded-xl bg-transparent text-foreground/80"
+          title={pomodoroEnabled ? `Pomodoro: ${pomodoroFocusMinutes}min focus / ${pomodoroBreakMinutes}min break — configure when starting a session` : 'Pomodoro off — enable when starting a session'}
+          aria-label="Pomodoro timer status"
+        >
+          {pomodoroEnabled ? (
+            <motion.span
+              className="flex items-center justify-center"
+              animate={pomodoroPhase === 'break' ? { rotate: [0, -10, 10, -5, 0] } : {}}
+              transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+            >
+              <Coffee size={14} strokeWidth={1.7} />
+            </motion.span>
+          ) : (
+            <span className="relative flex items-center justify-center opacity-40">
+              <Timer size={14} strokeWidth={1.5} />
+              <span className="absolute -right-0.5 -top-0.5 text-[6px]">off</span>
+            </span>
+          )}
+        </div>
+
+        <div className="h-4 w-px bg-border/60" aria-hidden />
+
         {ddayText ? (
           <div
             className="hidden sm:flex items-center justify-center px-2.5 h-10 rounded-xl bg-transparent text-[11px] font-semibold tabular-nums text-muted-foreground"
@@ -69,6 +96,20 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
             {ddayText}
           </div>
         ) : null}
+
+        {/* Pomodoro focus countdown visible during active session */}
+        {active && pomodoroEnabled && pomodoroPhase === null && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex h-10 min-h-[40px] items-center gap-1.5 rounded-xl border border-emerald-200/60 bg-emerald-50/80 px-3 text-emerald-700 shadow-sm dark:border-emerald-800/40 dark:bg-emerald-950/40 dark:text-emerald-300"
+          >
+            <Timer size={13} strokeWidth={1.7} className="shrink-0" />
+            <span className="tabular-nums text-[11px] font-medium">
+              {pomodoroFocusMinutes}m focus
+            </span>
+          </motion.div>
+        )}
 
         <motion.button
           type="button"
@@ -83,9 +124,14 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
                 ? 'Stop study timer'
                 : 'Start study timer'
           }
+          ref={startBtnRef}
           onClick={() => {
             play('tap');
-            void toggle();
+            if (active) {
+              void toggle();
+            } else {
+              setStartPopoverOpen(true);
+            }
           }}
           className="relative flex h-10 min-h-[40px] w-10 min-w-[40px] items-center justify-center rounded-xl border-0 bg-transparent text-foreground/80 shadow-none [box-shadow:none] transition-colors hover:bg-muted/50 disabled:opacity-45"
         >
@@ -128,6 +174,16 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
           </motion.span>
         </motion.button>
 
+        {/* Unified start session popover (area selection + pomodoro settings) */}
+        <StartSessionPopover
+          open={startPopoverOpen}
+          onClose={() => setStartPopoverOpen(false)}
+          onSelect={(areaId) => {
+            void toggle(areaId);
+          }}
+          anchorRef={startBtnRef}
+        />
+
         {/* Pomodoro break indicator */}
         {pomodoroPhase === 'break' && (
           <motion.button
@@ -154,8 +210,6 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
           </motion.button>
         )}
         <SoundToggle className="border-0 bg-transparent shadow-none [box-shadow:none] hover:bg-muted/50" />
-        <div className="h-4 w-px bg-border/60" aria-hidden />
-        <ThemeToggle className="border-0 bg-transparent shadow-none [box-shadow:none] hover:bg-muted/50" />
         <div className="h-4 w-px bg-border/60" aria-hidden />
         <div className="pl-0.5 pr-0.5">
           <ProfileDropdown user={user} />

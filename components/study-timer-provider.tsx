@@ -28,7 +28,7 @@ type StudyTimerState = {
   redisAvailable: boolean;
   elapsedSeconds: number;
   busy: boolean;
-  toggle: () => Promise<void>;
+  toggle: (areaId?: string | null) => Promise<void>;
   refresh: () => Promise<void>;
   // Pomodoro
   pomodoroEnabled: boolean;
@@ -232,9 +232,25 @@ export function StudyTimerProvider({
     setPomodoroEnabled(settings.pomodoroEnabled);
     setPomodoroFocusMinutes(settings.pomodoroFocusMinutes);
     setPomodoroBreakMinutes(settings.pomodoroBreakMinutes);
+    // Persist to localStorage
+    try {
+      localStorage.setItem('swm:pomodoro-enabled', settings.pomodoroEnabled ? '1' : '0');
+      localStorage.setItem('swm:pomodoro-focus-minutes', String(settings.pomodoroFocusMinutes));
+      localStorage.setItem('swm:pomodoro-break-minutes', String(settings.pomodoroBreakMinutes));
+    } catch {}
+    // Persist to server
+    void fetch('/api/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pomodoroEnabled: settings.pomodoroEnabled,
+        pomodoroFocusMinutes: settings.pomodoroFocusMinutes,
+        pomodoroBreakMinutes: settings.pomodoroBreakMinutes,
+      }),
+    }).catch(() => {});
   }, []);
 
-  const toggle = useCallback(async () => {
+  const toggle = useCallback(async (areaId?: string | null) => {
     if (busy) return;
     setBusy(true);
     try {
@@ -243,7 +259,7 @@ export function StudyTimerProvider({
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, areaId: action === 'start' ? (areaId ?? null) : undefined }),
       });
       const data = (await res.json()) as {
         error?: string;

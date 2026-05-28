@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import ThemeToggle from '@/components/theme-toggle';
-import { Bell, Pencil, Settings, Timer, User } from 'lucide-react';
+import { Bell, Pencil, Settings, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { SerializedUserSettings } from '@/lib/user-settings';
 import AvatarCropModal, {
@@ -133,15 +133,6 @@ export default function SettingsClient({
     initialSettings.friendActivity,
   );
   const [roomInvites, setRoomInvites] = useState(initialSettings.roomInvites);
-  const [pomodoroEnabled, setPomodoroEnabled] = useState(
-    initialSettings.pomodoroEnabled,
-  );
-  const [pomodoroFocusMinutes, setPomodoroFocusMinutes] = useState(
-    initialSettings.pomodoroFocusMinutes,
-  );
-  const [pomodoroBreakMinutes, setPomodoroBreakMinutes] = useState(
-    initialSettings.pomodoroBreakMinutes,
-  );
   const [showMotionMessage, setShowMotionMessage] = useState(false);
 
   function revokeCropBlob() {
@@ -183,18 +174,6 @@ export default function SettingsClient({
       localStorage.setItem(
         'swm:solo-mode',
         initialSettings.soloMode ? '1' : '0',
-      );
-      localStorage.setItem(
-        'swm:pomodoro-enabled',
-        initialSettings.pomodoroEnabled ? '1' : '0',
-      );
-      localStorage.setItem(
-        'swm:pomodoro-focus-minutes',
-        String(initialSettings.pomodoroFocusMinutes),
-      );
-      localStorage.setItem(
-        'swm:pomodoro-break-minutes',
-        String(initialSettings.pomodoroBreakMinutes),
       );
     } catch {}
   }, [initialSettings]);
@@ -277,7 +256,7 @@ export default function SettingsClient({
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-2 sm:px-6">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-2 sm:px-6" style={{ scrollbarGutter: 'stable' }}>
       <div className="mx-auto w-full max-w-2xl space-y-5 pt-2">
         <div className="flex items-center gap-2 pt-1">
           <Settings
@@ -600,87 +579,6 @@ export default function SettingsClient({
           </div>
         </div>
 
-        <div
-          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
-          shadow-[var(--panel-shadow-inner)]"
-        >
-          <SectionHeader
-            icon={Timer}
-            title="Pomodoro Timer"
-            description="Focus intervals with scheduled breaks"
-          />
-          <div className="divide-y divide-border/40">
-            <SettingRow
-              label="Enable pomodoro"
-              description="After a focus session, automatically enter break mode"
-              control={
-                <Toggle
-                  checked={pomodoroEnabled}
-                  onChange={(next) => {
-                    setPomodoroEnabled(next);
-                    persistFlag('swm:pomodoro-enabled', 'pomodoroEnabled', next);
-                  }}
-                />
-              }
-            />
-            <SettingRow
-              label="Focus duration"
-              description="Minutes per focus session"
-              control={
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={1}
-                    max={120}
-                    value={pomodoroFocusMinutes}
-                    onChange={(e) => {
-                      const v = Math.max(1, Math.min(120, Number(e.target.value) || 25));
-                      setPomodoroFocusMinutes(v);
-                      try {
-                        localStorage.setItem('swm:pomodoro-focus-minutes', String(v));
-                      } catch {}
-                      void fetch('/api/settings', {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ pomodoroFocusMinutes: v }),
-                      }).catch(() => {});
-                    }}
-                    className="w-20 rounded-md border border-border/70 bg-background px-2.5 py-1.5 text-[11.5px] text-foreground text-center tabular-nums"
-                  />
-                  <span className="text-[11px] text-muted-foreground">min</span>
-                </div>
-              }
-            />
-            <SettingRow
-              label="Break duration"
-              description="Minutes per break between sessions"
-              control={
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={1}
-                    max={30}
-                    value={pomodoroBreakMinutes}
-                    onChange={(e) => {
-                      const v = Math.max(1, Math.min(30, Number(e.target.value) || 5));
-                      setPomodoroBreakMinutes(v);
-                      try {
-                        localStorage.setItem('swm:pomodoro-break-minutes', String(v));
-                      } catch {}
-                      void fetch('/api/settings', {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ pomodoroBreakMinutes: v }),
-                      }).catch(() => {});
-                    }}
-                    className="w-20 rounded-md border border-border/70 bg-background px-2.5 py-1.5 text-[11.5px] text-foreground text-center tabular-nums"
-                  />
-                  <span className="text-[11px] text-muted-foreground">min</span>
-                </div>
-              }
-            />
-          </div>
-        </div>
       </div>
 
       <AvatarCropModal

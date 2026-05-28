@@ -192,32 +192,33 @@ export default function LandingCardStack({
                 y: isCurrentActive(index)
                   ? ACTIVE_CARD_Y
                   : isAnyCardActive()
-                    ? 460
+                    ? card.config.y + 20
                     : card.config.y,
                 x: isCurrentActive(index)
                   ? isMobile
                     ? mobileActiveX
                     : 138
                   : isAnyCardActive()
-                    ? card.config.x * 0.52 + 104
+                    ? card.config.x * 0.7 + 52
                     : card.config.x,
                 rotate: isCurrentActive(index)
                   ? 0
                   : isAnyCardActive()
-                    ? card.config.rotate * 0.4
+                    ? card.config.rotate * 0.5
                     : card.config.rotate,
-                scale: isCurrentActive(index) ? 1 : isAnyCardActive() ? 0.7 : 1,
+                scale: isCurrentActive(index) ? 1 : isAnyCardActive() ? 0.82 : 1,
                 width: isCurrentActive(index) ? ACTIVE_CARD_WIDTH : CARD_WIDTH,
                 height: isCurrentActive(index)
                   ? ACTIVE_CARD_HEIGHT
                   : CARD_HEIGHT,
-                filter: 'blur(0px)',
+                opacity: isCurrentActive(index) ? 1 : isAnyCardActive() ? 0.4 : 1,
+                filter: isCurrentActive(index) ? 'blur(0px)' : isAnyCardActive() ? 'blur(2px)' : 'blur(0px)',
               }}
               whileHover={{
                 scale: isCurrentActive(index)
                   ? 1
                   : isAnyCardActive()
-                    ? 0.7
+                    ? 0.82
                     : 1.05,
               }}
               transition={{

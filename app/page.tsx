@@ -4,7 +4,6 @@ import { motion } from 'motion/react';
 import Link from 'next/link';
 import { ArrowRight, Brain, Timer, CheckSquare2, Library, Music, Users, Sparkles } from 'lucide-react';
 import LandingCardStack from '@/components/landing-card-stack';
-import TestimonialAnimatedTooltip from '@/components/testimonial-animated-tooltip';
 
 const FEATURES = [
   {
@@ -184,28 +183,13 @@ export default function HomePage() {
         <div className="mx-auto max-w-5xl">
           <div className="mb-12 text-center">
             <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              See it in action
+              Explore the experience
             </h2>
             <p className="mt-3 text-[14px] text-muted-foreground">
-              Hover over any card to explore the experience.
+              Hover over a card to see it in detail.
             </p>
           </div>
           <LandingCardStack className="mx-auto h-[28rem] max-w-4xl" />
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="relative z-10 border-t border-border/20 bg-[#f7f5f2] px-6 py-24 dark:bg-[var(--background)]">
-        <div className="mx-auto max-w-5xl">
-          <div className="mb-12 text-center">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Loved by students
-            </h2>
-            <p className="mt-3 text-[14px] text-muted-foreground">
-              Join the community of focused learners.
-            </p>
-          </div>
-          <TestimonialAnimatedTooltip />
         </div>
       </section>
 
