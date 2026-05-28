@@ -1,13 +1,8 @@
-import dynamic from 'next/dynamic';
 import { requireSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { libraryItemFromPrismaRow } from "@/lib/library-item";
 import { isMissingLibraryTableError, LIBRARY_LIST_SELECT } from "@/lib/library-db";
-
-const LibraryClient = dynamic(
-  () => import("@/components/library/library-client"),
-  { ssr: false },
-);
+import LibraryPageClient from "./library-page-client";
 
 export default async function LibraryPage() {
   const session = await requireSession();
@@ -26,5 +21,5 @@ export default async function LibraryPage() {
 
   const initialItems = rows.map(libraryItemFromPrismaRow);
 
-  return <LibraryClient initialItems={initialItems} />;
+  return <LibraryPageClient initialItems={initialItems} />;
 }
