@@ -2,6 +2,7 @@ import Sidebar from '@/components/sideBar';
 import DashboardNavbar from '@/components/dashboard-navbar';
 import FloatingDock from '@/components/floatingDock';
 import PageTransition from '@/components/page-transition';
+import SessionFeedbackWrapper from '@/components/session-feedback-wrapper';
 import { MobileNavProvider } from '@/components/mobile-nav-context';
 import { getCachedDashboardShellUser } from '@/lib/rsc-cache';
 import { getServerSession } from '@/lib/session';
@@ -48,6 +49,8 @@ export default async function DashboardGroupLayout({
               {children}
             </PageTransition>
           </div>
+
+          <SessionFeedbackWrapper />
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex max-w-[100vw] justify-center px-2 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:fixed sm:inset-x-0 sm:bottom-0 sm:pb-4">
             <div className="group/dock-peek relative flex flex-col items-center">

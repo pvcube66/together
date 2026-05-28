@@ -277,6 +277,14 @@ export function StudyTimerProvider({
               description: `You studied for ${minutes} minute${minutes !== 1 ? 's' : ''}`,
               duration: 4000,
             });
+            // Dispatch session feedback event
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('session-complete', {
+                  detail: { durationSec, durationMin: minutes },
+                }),
+              );
+            }
           }
           // Auto-enter break mode if pomodoro is enabled and session was long enough
           if (pomodoroEnabled && minutes >= pomodoroFocusMinutes && pomodoroPhase !== 'break') {
