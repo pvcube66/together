@@ -221,20 +221,25 @@ export async function readTimerState(userId: string): Promise<TimerState> {
   const now = new Date();
   const studyDayStart = getStudyDayStart(now);
   const nextDay = new Date(studyDayStart.getTime() + 86_400_000);
-  const [live, todaySeconds, dailyStats] = await Promise.all([
+  const [live, todaySeconds, focusAgg, activityAgg] = await Promise.all([
     readLiveStudySession(userId),
     readTodaySeconds(userId),
-    prisma.dailyStats.aggregate({
+    prisma.focusSession.aggregate({
+      where: { userId, completedAt: { gte: studyDayStart, lt: nextDay } },
+      _sum: { durationMin: true },
+    }),
+    prisma.activityLog.aggregate({
       where: { userId, date: { gte: studyDayStart, lt: nextDay } },
-      _sum: { totalMinutes: true },
+      _sum: { durationMin: true },
     }),
   ]);
+  const todayMinutes = (focusAgg._sum.durationMin ?? 0) + (activityAgg._sum.durationMin ?? 0);
   return buildTimerState({
     active: live !== null,
     paused: live?.pausedAt != null,
     startedAt: live?.startedAt ?? null,
     todaySeconds,
-    todayMinutes: dailyStats._sum.totalMinutes ?? 0,
+    todayMinutes,
     redisAvailable: true,
   });
 }

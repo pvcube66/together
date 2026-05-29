@@ -34,9 +34,12 @@ export const GET = withApi(async () => {
   );
   let user: { lifetimeFocusMinutes: number; name: string | null; image: string | null } | null = null;
   let streak: { currentStreak: number; longestStreak: number; lastActiveDate: Date | null } | null = null;
-  let todayAgg: { _sum: { totalMinutes: number | null } } = { _sum: { totalMinutes: 0 } };
-  let weekAgg: { _sum: { totalMinutes: number | null } } = { _sum: { totalMinutes: 0 } };
-  let monthAgg: { _sum: { totalMinutes: number | null } } = { _sum: { totalMinutes: 0 } };
+  let todayFocusAgg: { _sum: { durationMin: number | null } } = { _sum: { durationMin: 0 } };
+  let todayActivityAgg: { _sum: { durationMin: number | null } } = { _sum: { durationMin: 0 } };
+  let weekFocusAgg: { _sum: { durationMin: number | null } } = { _sum: { durationMin: 0 } };
+  let weekActivityAgg: { _sum: { durationMin: number | null } } = { _sum: { durationMin: 0 } };
+  let monthFocusAgg: { _sum: { durationMin: number | null } } = { _sum: { durationMin: 0 } };
+  let monthActivityAgg: { _sum: { durationMin: number | null } } = { _sum: { durationMin: 0 } };
   let last7DaysRows: { date: Date; totalMinutes: number }[] = [];
   let recentSessions: {
     id: string;
@@ -49,9 +52,12 @@ export const GET = withApi(async () => {
     [
       user,
       streak,
-      todayAgg,
-      weekAgg,
-      monthAgg,
+      todayFocusAgg,
+      todayActivityAgg,
+      weekFocusAgg,
+      weekActivityAgg,
+      monthFocusAgg,
+      monthActivityAgg,
       last7DaysRows,
       recentSessions,
     ] = await Promise.all([
@@ -63,23 +69,54 @@ export const GET = withApi(async () => {
         where: { userId },
         select: { currentStreak: true, longestStreak: true, lastActiveDate: true },
       }),
-      prisma.dailyStats.aggregate({
+      prisma.focusSession.aggregate({
+        where: { userId, completedAt: { gte: todayStart, lt: nextDay } },
+        _sum: { durationMin: true },
+      }),
+      prisma.activityLog.aggregate({
         where: { userId, date: { gte: todayStart, lt: nextDay } },
-        _sum: { totalMinutes: true },
+        _sum: { durationMin: true },
       }),
-      prisma.dailyStats.aggregate({
+      prisma.focusSession.aggregate({
+        where: { userId, completedAt: { gte: weekStart, lt: nextWeek } },
+        _sum: { durationMin: true },
+      }),
+      prisma.activityLog.aggregate({
         where: { userId, date: { gte: weekStart, lt: nextWeek } },
-        _sum: { totalMinutes: true },
+        _sum: { durationMin: true },
       }),
-      prisma.dailyStats.aggregate({
+      prisma.focusSession.aggregate({
+        where: { userId, completedAt: { gte: monthStart, lt: nextMonth } },
+        _sum: { durationMin: true },
+      }),
+      prisma.activityLog.aggregate({
         where: { userId, date: { gte: monthStart, lt: nextMonth } },
-        _sum: { totalMinutes: true },
+        _sum: { durationMin: true },
       }),
-      prisma.dailyStats.findMany({
-        where: { userId, date: { gte: sevenDaysAgo, lte: todayStart } },
-        orderBy: { date: "asc" },
-        select: { date: true, totalMinutes: true },
-      }),
+      // Daily totals for the last-7-days strip — use focusSession + activityLog
+      (async () => {
+        const focusRows = await prisma.focusSession.findMany({
+          where: { userId, completedAt: { gte: sevenDaysAgo, lte: todayStart } },
+          select: { durationMin: true, completedAt: true },
+        });
+        const activityRows = await prisma.activityLog.findMany({
+          where: { userId, date: { gte: sevenDaysAgo, lte: todayStart } },
+          select: { durationMin: true, date: true },
+        });
+        const dayMap = new Map<string, number>();
+        for (const f of focusRows) {
+          const key = f.completedAt.toISOString().slice(0, 10);
+          dayMap.set(key, (dayMap.get(key) ?? 0) + f.durationMin);
+        }
+        for (const a of activityRows) {
+          const key = a.date.toISOString().slice(0, 10);
+          dayMap.set(key, (dayMap.get(key) ?? 0) + (a.durationMin ?? 0));
+        }
+        return Array.from(dayMap.entries()).map(([iso, totalMinutes]) => ({
+          date: new Date(iso + 'T00:00:00.000Z'),
+          totalMinutes,
+        }));
+      })(),
       prisma.focusSession.findMany({
         where: { userId },
         orderBy: { completedAt: "desc" },
@@ -107,6 +144,10 @@ export const GET = withApi(async () => {
 
   const todaySeconds = await readTodaySeconds(userId);
 
+  const today = (todayFocusAgg._sum.durationMin ?? 0) + (todayActivityAgg._sum.durationMin ?? 0);
+  const thisWeek = (weekFocusAgg._sum.durationMin ?? 0) + (weekActivityAgg._sum.durationMin ?? 0);
+  const thisMonth = (monthFocusAgg._sum.durationMin ?? 0) + (monthActivityAgg._sum.durationMin ?? 0);
+
   return NextResponse.json({
     name: user?.name ?? null,
     image: user?.image ?? null,
@@ -118,10 +159,10 @@ export const GET = withApi(async () => {
           lastActiveDate: streak.lastActiveDate?.toISOString() ?? null,
         }
       : { currentStreak: 0, longestStreak: 0, lastActiveDate: null },
-    today: todayAgg._sum.totalMinutes ?? 0,
+    today,
     todaySeconds,
-    thisWeek: weekAgg._sum.totalMinutes ?? 0,
-    thisMonth: monthAgg._sum.totalMinutes ?? 0,
+    thisWeek,
+    thisMonth,
     last7Days,
     recentSessions: recentSessions.map((s) => ({
       id: s.id,
