@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import YouTubeEmbedPanel from "./youtube-embed-panel";
 import {
@@ -11,6 +11,7 @@ import {
 
 export default function VideoPlayerWrapper() {
   const router = useRouter();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [selection, setSelection] = useState(() => readDashboardLecture());
 
   const embedUrl = selection?.embedUrl ?? null;
@@ -46,7 +47,7 @@ export default function VideoPlayerWrapper() {
   }, []);
 
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 flex-col">
+    <div ref={containerRef} className="flex h-full min-h-0 w-full min-w-0 flex-col">
       <YouTubeEmbedPanel
         embedUrl={embedUrl}
         activeLabel={selection?.label ?? null}
@@ -55,7 +56,7 @@ export default function VideoPlayerWrapper() {
           clearDashboardLecture();
           setSelection(null);
         }}
-        onEnterFocus={embedUrl ? () => router.push("/rooms") : undefined}
+        onEnterFocus={embedUrl ? () => containerRef.current?.requestFullscreen() : undefined}
         focusMode={false}
       />
     </div>
