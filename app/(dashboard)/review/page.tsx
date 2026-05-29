@@ -1,6 +1,6 @@
 import { requireSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
-import { getWeekStart } from "@/lib/periods";
+import { getStudyDayStart, getWeekStart } from "@/lib/periods";
 import ReviewClient from "./review-client";
 
 type AreaInfo = { id: string; name: string; color: string; icon: string | null };
@@ -12,6 +12,8 @@ export default async function ReviewAndRecordsPage() {
 
   const weekStart = getWeekStart(now);
   const weekEnd = new Date(weekStart.getTime() + 7 * 86_400_000);
+  const todayStart = getStudyDayStart(now);
+  const todayEnd = new Date(todayStart.getTime() + 86_400_000);
 
   const [
     // 1. Weekly Focus Sessions
@@ -38,6 +40,12 @@ export default async function ReviewAndRecordsPage() {
     longestActivity,
     // 12. All-Time Best rated activity
     bestRatingActivity,
+    // 13. Today's focus sessions
+    todayFocusSessions,
+    // 14. Today's activity logs
+    todayActivityLogs,
+    // 15. Today's daily stats
+    todayStats,
   ] = await Promise.all([
     // Weekly Focus Sessions
     prisma.focusSession.findMany({
@@ -119,6 +127,32 @@ export default async function ReviewAndRecordsPage() {
         area: { select: { name: true, color: true } },
       },
     }),
+
+    // 13. Today's focus sessions (with area)
+    prisma.focusSession.findMany({
+      where: { userId, completedAt: { gte: todayStart, lt: todayEnd } },
+      select: {
+        durationMin: true,
+        area: { select: { id: true, name: true, color: true, icon: true } },
+      },
+    }),
+
+    // 14. Today's activity logs (with area + rating)
+    prisma.activityLog.findMany({
+      where: { userId, date: { gte: todayStart, lt: todayEnd } },
+      select: {
+        rating: true,
+        durationMin: true,
+        title: true,
+        area: { select: { id: true, name: true, color: true, icon: true } },
+      },
+    }),
+
+    // 15. Today's daily stats
+    prisma.dailyStats.findUnique({
+      where: { userId_date: { userId, date: todayStart } },
+      select: { totalMinutes: true },
+    }),
   ]);
 
   // Weekly stats compilation
@@ -185,6 +219,27 @@ export default async function ReviewAndRecordsPage() {
     ? Math.round(ratingAggregation._avg.rating * 10) / 10
     : 0;
 
+  // Today's stats
+  const todayTotalMinutes = todayStats?.totalMinutes ?? todayFocusSessions.reduce((s, f) => s + f.durationMin, 0);
+
+  const todayAreaMap = new Map<string, { id: string; name: string; color: string; icon: string | null; minutes: number }>();
+  for (const s of todayFocusSessions) {
+    if (s.area) {
+      const existing = todayAreaMap.get(s.area.id);
+      if (existing) {
+        existing.minutes += s.durationMin;
+      } else {
+        todayAreaMap.set(s.area.id, { ...s.area, minutes: s.durationMin });
+      }
+    }
+  }
+  const todayAreaBreakdown = Array.from(todayAreaMap.values()).sort((a, b) => b.minutes - a.minutes);
+
+  const todayRatedLogs = todayActivityLogs.filter((l) => l.rating !== null);
+  const todayAvgRating = todayRatedLogs.length > 0
+    ? Math.round((todayRatedLogs.reduce((s, l) => s + (l.rating ?? 0), 0) / todayRatedLogs.length) * 10) / 10
+    : 0;
+
   return (
     <ReviewClient
       // Weekly review data
@@ -224,6 +279,12 @@ export default async function ReviewAndRecordsPage() {
         areaName: bestRatingActivity.area?.name ?? 'No area',
         areaColor: bestRatingActivity.area?.color ?? '#6366f1',
       } : null}
+      
+      // Today's stats
+      todayTotalMinutes={todayTotalMinutes}
+      todayAreaBreakdown={todayAreaBreakdown}
+      todayAvgRating={todayAvgRating}
+      todayRatingCount={todayRatedLogs.length}
     />
   );
 }

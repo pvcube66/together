@@ -14,6 +14,7 @@ import {
   Layers,
   BarChart3,
 } from 'lucide-react';
+import TodayStatsCard from '@/components/review/today-stats-card';
 
 type AreaBreakdown = {
   id: string;
@@ -65,6 +66,12 @@ export default function ReviewClient({
   allTimeAverageRating,
   longestActivity,
   bestRatingActivity,
+
+  // Today's Stats Props
+  todayTotalMinutes,
+  todayAreaBreakdown,
+  todayAvgRating,
+  todayRatingCount,
 }: {
   weekStart: string;
   weekEnd: string;
@@ -89,6 +96,11 @@ export default function ReviewClient({
   allTimeAverageRating: number;
   longestActivity: ActivityRecord | null;
   bestRatingActivity: RatingRecord | null;
+
+  todayTotalMinutes: number;
+  todayAreaBreakdown: { id: string; name: string; color: string; icon: string | null; minutes: number }[];
+  todayAvgRating: number;
+  todayRatingCount: number;
 }) {
   const weekLabel = `${new Date(weekStart).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })} – ${new Date(weekEnd).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}`;
 
@@ -198,7 +210,16 @@ export default function ReviewClient({
           </div>
         </div>
 
-        {/* 1. High-Level Summary Overview (All-Time Highlights) */}
+        {/* 1. Today's Progress Card */}
+        <TodayStatsCard
+          totalMinutes={todayTotalMinutes}
+          currentStreak={currentStreak}
+          areas={todayAreaBreakdown}
+          avgRating={todayAvgRating}
+          ratingCount={todayRatingCount}
+        />
+
+        {/* 2. High-Level Summary Overview (All-Time Highlights) */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
           <OverviewCard
             icon={<Flame size={13} />}
@@ -239,7 +260,7 @@ export default function ReviewClient({
           />
         </div>
 
-        {/* 2. Main Dashboard Split Layout */}
+        {/* 3. Main Dashboard Split Layout */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           
           {/* Left Column: Weekly Review */}
