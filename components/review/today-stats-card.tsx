@@ -1,8 +1,16 @@
 'use client';
 
-import { useCallback, useState } from 'react';
-import { motion } from 'motion/react';
-import { Clock, Flame, Star, Share2, Check, Frown, Meh, Smile, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { motion, useMotionValue, useSpring, useTransform, useMotionValueEvent } from 'motion/react';
+import Image from 'next/image';
+import {
+  Flame,
+  Star,
+  Frown,
+  Meh,
+  Smile,
+  Sparkles,
+} from 'lucide-react';
 
 type AreaBreakdown = {
   id: string;
@@ -13,11 +21,11 @@ type AreaBreakdown = {
 };
 
 const MOOD_LEVELS = [
-  { max: 2, icon: Frown, label: 'Distracted', color: '#f43f5e' },
-  { max: 4, icon: Meh, label: 'Okay', color: '#f59e0b' },
-  { max: 6, icon: Smile, label: 'Good', color: '#22c55e' },
-  { max: 8, icon: Star, label: 'Great', color: '#3b82f6' },
-  { max: 10, icon: Sparkles, label: 'Excellent', color: '#8b5cf6' },
+  { max: 2, icon: Frown, label: 'Distracted', color: '#f43f5e', hue: 0 },
+  { max: 4, icon: Meh, label: 'Okay', color: '#f59e0b', hue: 30 },
+  { max: 6, icon: Smile, label: 'Good', color: '#22c55e', hue: 120 },
+  { max: 8, icon: Star, label: 'Great', color: '#3b82f6', hue: 210 },
+  { max: 10, icon: Sparkles, label: 'Excellent', color: '#8b5cf6', hue: 270 },
 ];
 
 function getMoodInfo(rating: number) {
@@ -27,187 +35,184 @@ function getMoodInfo(rating: number) {
   return MOOD_LEVELS[MOOD_LEVELS.length - 1];
 }
 
-export default function TodayStatsCard({
-  totalMinutes,
-  currentStreak,
-  areas,
-  avgRating,
-  ratingCount,
-}: {
-  totalMinutes: number;
-  currentStreak: number;
-  areas: AreaBreakdown[];
-  avgRating: number;
-  ratingCount: number;
-}) {
-  const [copied, setCopied] = useState(false);
+function AnimatedDuration({ minutes }: { minutes: number }) {
+  const mv = useMotionValue(0);
+  const spring = useSpring(mv, { stiffness: 40, damping: 12 });
+  const rounded = useTransform(spring, (v) => Math.round(v));
+  const [display, setDisplay] = useState(0);
 
-  const today = new Date();
-  const dateStr = today.toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  useMotionValueEvent(rounded, 'change', (v) => setDisplay(v));
 
-  const formatDuration = (min: number) => {
+  useEffect(() => {
+    mv.set(minutes);
+  }, [minutes, mv]);
+
+  const format = (min: number) => {
     if (min < 60) return `${min}m`;
     const h = Math.floor(min / 60);
     const m = min % 60;
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
   };
 
+  return (
+    <span className="text-[38px] font-extrabold tabular-nums tracking-tight text-foreground">
+      {format(display)}
+    </span>
+  );
+}
+
+const formatMin = (min: number) => {
+  if (min < 60) return `${min}m`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+};
+
+export default function TodayStatsCard({
+  userImage,
+  totalMinutes,
+  currentStreak,
+  areas,
+  avgRating,
+  ratingCount,
+}: {
+  userImage: string | null;
+  totalMinutes: number;
+  currentStreak: number;
+  areas: AreaBreakdown[];
+  avgRating: number;
+  ratingCount: number;
+}) {
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
   const maxMinutes = Math.max(...areas.map((a) => a.minutes), 1);
   const hasData = totalMinutes > 0 || areas.length > 0 || ratingCount > 0;
 
-  const shareText = [
-    `📊 Today's Progress — ${dateStr}`,
-    '',
-    `⏱ Focus Time: ${formatDuration(totalMinutes)}`,
-    currentStreak > 0 ? `🔥 Streak: ${currentStreak} day${currentStreak > 1 ? 's' : ''}` : null,
-    avgRating > 0 ? `⭐ Mood: ${avgRating}/10 (${getMoodInfo(avgRating).label})` : null,
-    '',
-    ...areas.map((a) => `  ${a.icon ?? '•'} ${a.name}: ${formatDuration(a.minutes)}`),
-    '',
-    '— from Curtus',
-  ]
-    .filter(Boolean)
-    .join('\n');
-
-  const handleShare = useCallback(async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Today's Progress", text: shareText });
-        return;
-      } catch {
-        // user cancelled
-      }
-    }
-    await navigator.clipboard.writeText(shareText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [shareText]);
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.2, 0, 0, 1] }}
-      className="relative overflow-hidden rounded-2xl border border-border/45 bg-gradient-to-br from-indigo-500/[0.04] via-transparent to-amber-500/[0.03] p-5 shadow-[var(--shadow-ambient-md)]"
+      transition={{ duration: 0.45, ease: [0.2, 0, 0, 1] }}
+      className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-indigo-500/[0.04] via-card to-amber-500/[0.03] p-9 shadow-[var(--shadow-ambient-md)]"
     >
-      {/* Decorative gradient blobs */}
-      <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-indigo-500/8 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-amber-500/6 blur-3xl" />
+      <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-indigo-500/10 blur-[80px]" />
+      <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-amber-500/8 blur-[70px]" />
 
       <div className="relative">
-        {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex items-center justify-between mb-7">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/12 text-indigo-500">
-                <Clock size={13} />
-              </span>
-              <h3 className="text-[13px] font-bold text-foreground">Today&apos;s Progress</h3>
-            </div>
-            <p className="mt-1 text-[10px] font-medium text-muted-foreground/70">{dateStr}</p>
+            <h3 className="text-[17px] font-bold text-foreground">Today&apos;s Progress</h3>
+            <p className="text-[10px] font-medium text-muted-foreground/50 mt-0.5">{dateStr}</p>
           </div>
-
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.93 }}
-            onClick={handleShare}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/40 bg-card/60 text-muted-foreground/70 transition-colors hover:border-border/60 hover:text-foreground hover:bg-card/80"
-            aria-label="Share progress"
-            title="Share progress"
-          >
-            {copied ? <Check size={13} className="text-emerald-500" /> : <Share2 size={13} />}
-          </motion.button>
+          {userImage && (
+            <Image
+              src={userImage}
+              alt=""
+              width={72}
+              height={72}
+              className="rounded-full border-2 border-border/30 shrink-0"
+            />
+          )}
         </div>
 
         {!hasData ? (
-          <div className="mt-6 flex min-h-[6rem] items-center justify-center rounded-xl border border-dashed border-border/50 bg-muted/15 text-center p-4">
-            <p className="text-[11px] text-muted-foreground/60">No activity logged today yet.</p>
+          <div className="flex min-h-[6rem] items-center justify-center rounded-xl border border-dashed border-border/30 bg-muted/8 text-center py-4">
+            <p className="text-[12px] text-muted-foreground/50">No activity logged today yet.</p>
           </div>
         ) : (
           <>
-            {/* Hero: Total Focus Time */}
-            <div className="mt-5 flex items-baseline gap-1.5">
-              <span className="text-[32px] font-bold tabular-nums tracking-tight text-foreground">
-                {formatDuration(totalMinutes)}
-              </span>
-              <span className="text-[10px] font-medium text-muted-foreground/60">focused today</span>
+            <div className="mb-6">
+              <div className="flex items-baseline gap-2">
+                <AnimatedDuration minutes={totalMinutes} />
+                <span className="text-[12px] font-medium text-muted-foreground/50">focused today</span>
+              </div>
             </div>
 
-            {/* Streak + Mood row */}
-            <div className="mt-3 flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2 mb-6">
               {currentStreak > 0 && (
-                <div className="inline-flex items-center gap-1 rounded-full border border-orange-500/20 bg-orange-500/8 px-2.5 py-1">
-                  <Flame size={11} className="text-orange-500" />
-                  <span className="text-[10px] font-bold tabular-nums text-orange-500">{currentStreak} day{currentStreak > 1 ? 's' : ''}</span>
-                  <span className="text-[8px] text-muted-foreground/50">streak</span>
-                </div>
+                <span className="inline-flex items-center gap-1 rounded-lg border border-orange-500/15 bg-orange-500/8 px-2.5 py-1 text-[11px] font-semibold text-orange-500 tabular-nums">
+                  <Flame size={12} />
+                  {currentStreak}d streak
+                </span>
               )}
               {avgRating > 0 && (
-                <div className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/8 px-2.5 py-1">
+                <span className="inline-flex items-center gap-1 rounded-lg border border-amber-500/15 bg-amber-500/8 px-2.5 py-1 text-[11px] font-semibold text-amber-600 tabular-nums">
                   {(() => {
                     const mood = getMoodInfo(avgRating);
-                    const MoodIcon = mood.icon;
-                    return <MoodIcon size={11} className="text-amber-600" />;
+                    const Icon = mood.icon;
+                    return <Icon size={12} />;
                   })()}
-                  <span className="text-[10px] font-bold tabular-nums text-amber-600">{avgRating}/10</span>
-                  <span className="text-[8px] text-muted-foreground/50">{getMoodInfo(avgRating).label}</span>
-                </div>
+                  {avgRating}/10 · {getMoodInfo(avgRating).label}
+                </span>
+              )}
+              {areas.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/15 bg-emerald-500/8 px-2.5 py-1 text-[11px] font-semibold text-emerald-500 tabular-nums">
+                  {areas.length} area{areas.length !== 1 ? 's' : ''}
+                </span>
               )}
             </div>
 
-            {/* Areas breakdown */}
             {areas.length > 0 && (
-              <div className="mt-5 space-y-2.5 border-t border-border/30 pt-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Areas</p>
-                {areas.map((area) => (
-                  <div key={area.id} className="space-y-1">
+              <div className="space-y-3 mb-6">
+                {areas.map((area, i) => (
+                  <motion.div
+                    key={area.id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.08 + i * 0.03, duration: 0.25, ease: [0.2, 0, 0, 1] }}
+                    className="space-y-1"
+                  >
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-[11px] font-medium text-foreground truncate max-w-[65%]">
-                        {area.icon && <span className="text-[10px]">{area.icon}</span>}
-                        {!area.icon && <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: area.color }} />}
+                      <span className="flex items-center gap-2 text-[12px] font-semibold text-foreground/70 truncate max-w-[70%]">
+                        {area.icon && <span className="text-[13px]">{area.icon}</span>}
+                        {!area.icon && <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: area.color }} />}
                         {area.name}
                       </span>
-                      <span className="text-[11px] font-bold tabular-nums text-foreground/80">{formatDuration(area.minutes)}</span>
+                      <span className="text-[12px] font-bold tabular-nums text-foreground/50">{formatMin(area.minutes)}</span>
                     </div>
-                    <div className="h-1.5 w-full rounded-full bg-muted/60 overflow-hidden">
+                    <div className="h-[3px] w-full rounded-full bg-border/40 overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.min((area.minutes / maxMinutes) * 100, 100)}%` }}
-                        transition={{ duration: 0.5, ease: [0.2, 0, 0, 1], delay: 0.1 }}
+                        transition={{ duration: 0.5, ease: [0.2, 0, 0, 1], delay: 0.12 + i * 0.03 }}
                         className="h-full rounded-full"
-                        style={{ background: `linear-gradient(90deg, ${area.color}, ${area.color}cc)` }}
+                        style={{ background: `linear-gradient(90deg, ${area.color}, ${area.color}bb)` }}
                       />
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
 
-            {/* Star rating visualization */}
             {avgRating > 0 && (
-              <div className="mt-4 flex items-center gap-1.5 border-t border-border/30 pt-3.5">
-                <Star size={10} className="text-amber-500/70 shrink-0" />
-                <div className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <div
-                      key={star}
-                      className="h-1.5 w-4 rounded-full transition-colors"
-                      style={{
-                        background: avgRating / 2 >= star
-                          ? `hsl(${45 + star * 8}, 85%, ${55 - star * 4}%)`
-                          : 'var(--color-muted-foreground)',
-                        opacity: avgRating / 2 >= star ? 1 : 0.15,
-                      }}
-                    />
-                  ))}
+              <div className="flex items-center gap-2 rounded-xl border border-amber-500/10 bg-amber-500/5 px-3 py-2.5">
+                <Star size={11} className="text-amber-500/60 shrink-0" />
+                <div className="flex flex-1 gap-[3px] max-w-[160px]">
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const filled = avgRating / 2 >= star;
+                    const mood = getMoodInfo(avgRating);
+                    return (
+                      <div
+                        key={star}
+                        className="h-1.5 rounded-full flex-1"
+                        style={{
+                          background: filled
+                            ? `hsl(${mood.hue}, 65%, ${58 - star * 4}%)`
+                            : 'var(--color-border)',
+                          opacity: filled ? 1 : 0.5,
+                        }}
+                      />
+                    );
+                  })}
                 </div>
-                <span className="text-[9px] font-medium text-muted-foreground/60 ml-auto">
-                  {ratingCount} rating{ratingCount !== 1 ? 's' : ''}
+                <span className="text-[9px] font-medium text-muted-foreground/50 tabular-nums shrink-0">
+                  {getMoodInfo(avgRating).label}
                 </span>
               </div>
             )}

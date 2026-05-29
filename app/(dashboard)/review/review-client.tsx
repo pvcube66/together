@@ -68,6 +68,7 @@ export default function ReviewClient({
   bestRatingActivity,
 
   // Today's Stats Props
+  userImage,
   todayTotalMinutes,
   todayAreaBreakdown,
   todayAvgRating,
@@ -97,6 +98,7 @@ export default function ReviewClient({
   longestActivity: ActivityRecord | null;
   bestRatingActivity: RatingRecord | null;
 
+  userImage: string | null;
   todayTotalMinutes: number;
   todayAreaBreakdown: { id: string; name: string; color: string; icon: string | null; minutes: number }[];
   todayAvgRating: number;
@@ -212,6 +214,7 @@ export default function ReviewClient({
 
         {/* 1. Today's Progress Card */}
         <TodayStatsCard
+          userImage={userImage}
           totalMinutes={todayTotalMinutes}
           currentStreak={currentStreak}
           areas={todayAreaBreakdown}

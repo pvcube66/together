@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Together',
-  description: 'Study rooms, shared focus, and accountability.',
+  description: 'Focused study companion with Pomodoro timer, task management, and analytics.',
 };
 
 export const dynamic = 'force-dynamic';

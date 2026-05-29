@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Maximize2, X, BookOpen, ArrowRight } from 'lucide-react';
+import { Maximize2, Minimize2, X, BookOpen, ArrowRight } from 'lucide-react';
 import { SPRING_HOVER } from '@/lib/ui-motion';
 
 type Props = {
@@ -44,6 +44,8 @@ export default function YouTubeEmbedPanel({
           'relative flex w-full flex-col border border-border/40 bg-card p-4 rounded-2xl shadow-ambient-md ' +
           (isLibraryLayout
             ? 'min-w-0 shrink-0'
+            : focusMode
+            ? 'h-full min-h-0 min-w-0 max-h-full w-full shrink-0 sm:max-w-full'
             : 'h-full min-h-0 min-w-0 max-h-full w-full shrink-0 sm:max-w-[min(100%,94vw)] lg:w-[min(100%,90%)]')
         }
         whileHover={
@@ -69,16 +71,16 @@ export default function YouTubeEmbedPanel({
               <X size={15} strokeWidth={1.9} />
             </motion.button>
           )}
-          {embedUrl && onEnterFocus && !focusMode && (
+          {embedUrl && onEnterFocus && (
             <motion.button
               type="button"
               whileTap={{ scale: 0.96 }}
               onClick={onEnterFocus}
               className="absolute left-2 top-2 z-20 flex h-10 w-10 items-center justify-center rounded-lg border border-white/18 bg-black/45 text-white/85 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-white"
-              aria-label="Focus mode — full screen lecture"
-              title="Focus mode — full screen lecture"
+              aria-label={focusMode ? 'Exit full screen' : 'Full screen lecture'}
+              title={focusMode ? 'Exit full screen' : 'Full screen lecture'}
             >
-              <Maximize2 size={15} strokeWidth={1.9} />
+              {focusMode ? <Minimize2 size={15} strokeWidth={1.9} /> : <Maximize2 size={15} strokeWidth={1.9} />}
             </motion.button>
           )}
           

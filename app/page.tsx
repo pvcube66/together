@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import { ArrowRight, Brain, Timer, CheckSquare2, Library, Music, Users, Sparkles } from 'lucide-react';
+import { ArrowRight, Brain, Timer, CheckSquare2, Library, Music, Sparkles } from 'lucide-react';
 import LandingCardStack from '@/components/landing-card-stack';
 
 const FEATURES = [
@@ -40,13 +40,6 @@ const FEATURES = [
     description: 'Track daily, weekly, and monthly focus hours. View streaks, rate your sessions, and grow consistency.',
     gradient: 'from-rose-500/20 to-pink-500/10',
     color: 'text-rose-600',
-  },
-  {
-    icon: Users,
-    title: 'Live Study Rooms',
-    description: 'Study together in real-time rooms with shared timers, chat, and mutual accountability.',
-    gradient: 'from-cyan-500/20 to-sky-500/10',
-    color: 'text-cyan-600',
   },
 ];
 
@@ -117,7 +110,7 @@ export default function HomePage() {
             transition={{ duration: 0.5, delay: 0.2, ease: [0, 0, 0.58, 1] }}
             className="mx-auto mt-6 max-w-xl text-pretty text-[15px] leading-relaxed text-muted-foreground"
           >
-            A calm, beautiful space for focused study. Track sessions with the Pomodoro timer, organize tasks by area, save YouTube lectures, and study with friends in live rooms.
+            A calm, beautiful space for focused study. Track sessions with the Pomodoro timer, organize tasks by area, save YouTube lectures, and review your progress.
           </motion.p>
 
           <motion.div
@@ -222,7 +215,7 @@ export default function HomePage() {
             <span className="text-[12px] font-semibold text-muted-foreground">Together</span>
           </div>
           <p className="text-[11px] text-muted-foreground/70">
-            Built for focused studying. &copy; {new Date().getFullYear()}
+            Built on top of <a href="https://github.com/dexisback/curtus" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground/80">Curtus</a>. &copy; {new Date().getFullYear()}
           </p>
         </div>
       </footer>

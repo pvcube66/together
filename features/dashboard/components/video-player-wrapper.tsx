@@ -13,6 +13,7 @@ export default function VideoPlayerWrapper() {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const [selection, setSelection] = useState(() => readDashboardLecture());
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const embedUrl = selection?.embedUrl ?? null;
 
@@ -20,7 +21,6 @@ export default function VideoPlayerWrapper() {
     const sync = () => setSelection(readDashboardLecture());
     sync();
 
-    // Fetch fallback from library if no explicit selection exists
     if (!readDashboardLecture()) {
       fetch('/api/library')
         .then((res) => res.json())
@@ -46,6 +46,22 @@ export default function VideoPlayerWrapper() {
     };
   }, []);
 
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
+  const toggleFullscreen = embedUrl
+    ? () => {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else {
+          containerRef.current?.requestFullscreen();
+        }
+      }
+    : undefined;
+
   return (
     <div ref={containerRef} className="flex h-full min-h-0 w-full min-w-0 flex-col">
       <YouTubeEmbedPanel
@@ -56,8 +72,8 @@ export default function VideoPlayerWrapper() {
           clearDashboardLecture();
           setSelection(null);
         }}
-        onEnterFocus={embedUrl ? () => containerRef.current?.requestFullscreen() : undefined}
-        focusMode={false}
+        onEnterFocus={toggleFullscreen}
+        focusMode={isFullscreen}
       />
     </div>
   );

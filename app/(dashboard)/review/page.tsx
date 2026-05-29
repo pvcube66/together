@@ -44,8 +44,6 @@ export default async function ReviewAndRecordsPage() {
     todayFocusSessions,
     // 14. Today's activity logs
     todayActivityLogs,
-    // 15. Today's daily stats
-    todayStats,
   ] = await Promise.all([
     // Weekly Focus Sessions
     prisma.focusSession.findMany({
@@ -148,11 +146,6 @@ export default async function ReviewAndRecordsPage() {
       },
     }),
 
-    // 15. Today's daily stats
-    prisma.dailyStats.findUnique({
-      where: { userId_date: { userId, date: todayStart } },
-      select: { totalMinutes: true },
-    }),
   ]);
 
   // Weekly stats compilation
@@ -220,9 +213,12 @@ export default async function ReviewAndRecordsPage() {
     : 0;
 
   // Today's stats
-  const todayTotalMinutes = todayStats?.totalMinutes ?? todayFocusSessions.reduce((s, f) => s + f.durationMin, 0);
+  const todayFocusMinutes = todayFocusSessions.reduce((s, f) => s + f.durationMin, 0);
+  const todayActivityMinutes = todayActivityLogs.reduce((s, l) => s + (l.durationMin ?? 0), 0);
+  const todayTotalMinutes = todayFocusMinutes + todayActivityMinutes;
 
   const todayAreaMap = new Map<string, { id: string; name: string; color: string; icon: string | null; minutes: number }>();
+  let todayMiscMinutes = 0;
   for (const s of todayFocusSessions) {
     if (s.area) {
       const existing = todayAreaMap.get(s.area.id);
@@ -231,7 +227,12 @@ export default async function ReviewAndRecordsPage() {
       } else {
         todayAreaMap.set(s.area.id, { ...s.area, minutes: s.durationMin });
       }
+    } else {
+      todayMiscMinutes += s.durationMin;
     }
+  }
+  if (todayMiscMinutes > 0) {
+    todayAreaMap.set('__misc', { id: '__misc', name: 'Misc', color: '#888', icon: '📌', minutes: todayMiscMinutes });
   }
   const todayAreaBreakdown = Array.from(todayAreaMap.values()).sort((a, b) => b.minutes - a.minutes);
 
@@ -281,6 +282,7 @@ export default async function ReviewAndRecordsPage() {
       } : null}
       
       // Today's stats
+      userImage={session.user.image ?? null}
       todayTotalMinutes={todayTotalMinutes}
       todayAreaBreakdown={todayAreaBreakdown}
       todayAvgRating={todayAvgRating}
