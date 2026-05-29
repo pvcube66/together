@@ -71,6 +71,9 @@ const mediaIceCandidateSchema = mediaTargetSchema.extend({
 type LiveSession = {
   startedAt: string;
   roomId: string | null;
+  areaId?: string | null;
+  pausedTotalSec?: number;
+  pausedAt?: string | null;
 };
 
 export type PresencePayload = {
@@ -141,6 +144,7 @@ export type ServerToClientEvents = {
   'ping:received': (payload: { fromUserId: string; createdAt: string }) => void;
   'room:error': (payload: { message: string }) => void;
   'room:kicked': (payload: { roomId: string }) => void;
+  'room:deleted': (payload: { roomId: string }) => void;
   'media:offer': (payload: {
     roomId: string;
     fromUserId: string;
@@ -333,22 +337,31 @@ async function finalizeSession(
 ) {
   const completedAt = new Date();
   const startedAt = new Date(liveSession.startedAt);
-  const durationSec = Math.max(
+  const rawSec = Math.max(
     1,
     Math.floor((completedAt.getTime() - startedAt.getTime()) / 1_000),
   );
+  const pausedTotalSec = liveSession.pausedTotalSec ?? 0;
+  let totalPausedSec = pausedTotalSec;
+  if (liveSession.pausedAt) {
+    const pausedAt = new Date(liveSession.pausedAt);
+    totalPausedSec += Math.max(0, Math.floor((completedAt.getTime() - pausedAt.getTime()) / 1_000));
+  }
+  const durationSec = Math.max(1, rawSec - totalPausedSec);
   const durationMin = Math.max(
     1,
     Math.floor((completedAt.getTime() - startedAt.getTime()) / 60_000),
   );
   const studyDayStart = getStudyDayStart(completedAt);
   const roomId = liveSession.roomId ?? null;
+  const areaId = liveSession.areaId ?? null;
 
   const [, updatedUser] = await prisma.$transaction([
     prisma.focusSession.create({
       data: {
         userId: socket.data.userId,
         roomId,
+        areaId,
         durationMin,
         completedAt,
       },
@@ -366,6 +379,15 @@ async function finalizeSession(
         userId: socket.data.userId,
         date: studyDayStart,
         totalMinutes: durationMin,
+      },
+    }),
+    prisma.activityLog.create({
+      data: {
+        userId: socket.data.userId,
+        title: 'Focus session',
+        durationMin,
+        areaId,
+        date: completedAt,
       },
     }),
   ]);
@@ -489,6 +511,14 @@ async function isCurrentRoomMember(userId: string, roomId: string) {
   return Boolean(membership);
 }
 
+async function roomExists(roomId: string) {
+  const room = await prisma.room.findUnique({
+    where: { id: roomId },
+    select: { id: true },
+  });
+  return Boolean(room);
+}
+
 async function evictFromRoom(
   io: StudyServer,
   socket: StudySocket,
@@ -523,12 +553,22 @@ async function enforceRoomAccess(
     if (opts?.evictWhenInvalid !== false) {
       await evictFromRoom(io, socket, roomId);
     }
-    io.to(`user:${socket.data.userId}`).emit('room:kicked', { roomId });
-    if (opts?.emitRoomError)
-      socket.emit(
-        'room:error',
-        toRoomError('You are no longer a member of this room.'),
-      );
+    const roomGone = await roomExists(roomId);
+    if (roomGone) {
+      io.to(`user:${socket.data.userId}`).emit('room:kicked', { roomId });
+      if (opts?.emitRoomError)
+        socket.emit(
+          'room:error',
+          toRoomError('You are no longer a member of this room.'),
+        );
+    } else {
+      io.to(`user:${socket.data.userId}`).emit('room:deleted', { roomId });
+      if (opts?.emitRoomError)
+        socket.emit(
+          'room:error',
+          toRoomError('This room has been deleted by the host.'),
+        );
+    }
     return { ok: false as const, reason: 'not_member' };
   }
 
@@ -1029,9 +1069,18 @@ export function registerSocketEvents(io: StudyServer) {
           }
         }
 
+        // Read current key — if API already set it (has areaId), keep it
+        const alreadySet = await redis.get<LiveSession>(
+          getLiveSessionKey(socket.data.userId),
+        );
+        if (alreadySet && alreadySet.areaId !== undefined) {
+          return;
+        }
+
         const liveSession: LiveSession = {
           startedAt: new Date().toISOString(),
           roomId,
+          areaId: staleLive?.areaId ?? null,
         };
         await redis.set(getLiveSessionKey(socket.data.userId), liveSession, {
           ex: 12 * 60 * 60,
@@ -1093,22 +1142,31 @@ export function registerSocketEvents(io: StudyServer) {
         try {
           const completedAt = new Date();
           const startedAt = new Date(liveSession.startedAt);
-          const durationSec = Math.max(
+          const rawSec = Math.max(
             1,
             Math.floor((completedAt.getTime() - startedAt.getTime()) / 1_000),
           );
+          const pausedTotalSec = liveSession.pausedTotalSec ?? 0;
+          let totalPausedSec = pausedTotalSec;
+          if (liveSession.pausedAt) {
+            const pausedAt = new Date(liveSession.pausedAt);
+            totalPausedSec += Math.max(0, Math.floor((completedAt.getTime() - pausedAt.getTime()) / 1_000));
+          }
+          const durationSec = Math.max(1, rawSec - totalPausedSec);
           const durationMin = Math.max(
             1,
-            Math.floor((completedAt.getTime() - startedAt.getTime()) / 60_000),
+            Math.floor(durationSec / 60),
           );
           const studyDayStart = getStudyDayStart(completedAt);
           const roomId = liveSession.roomId ?? null;
+          const areaId = liveSession.areaId ?? null;
 
           await prisma.$transaction([
             prisma.focusSession.create({
               data: {
                 userId: socket.data.userId,
                 roomId,
+                areaId,
                 durationMin,
                 completedAt,
               },
@@ -1129,6 +1187,15 @@ export function registerSocketEvents(io: StudyServer) {
                 userId: socket.data.userId,
                 date: studyDayStart,
                 totalMinutes: durationMin,
+              },
+            }),
+            prisma.activityLog.create({
+              data: {
+                userId: socket.data.userId,
+                title: 'Focus session',
+                durationMin,
+                areaId,
+                date: completedAt,
               },
             }),
           ]);

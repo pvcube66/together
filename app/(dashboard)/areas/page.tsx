@@ -14,7 +14,7 @@ export default async function AreasPage() {
       color: true,
       icon: true,
       createdAt: true,
-      _count: { select: { tasks: true, focusSessions: true, libraryItems: true } },
+      _count: { select: { tasks: true, focusSessions: true, libraryItems: true, activityLogs: true } },
     },
   });
 

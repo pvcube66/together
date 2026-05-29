@@ -119,7 +119,7 @@ export default function VideoPlayer() {
         />
 
         <div
-          className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-[#161925]"
+          className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-neutral-950"
           style={{ borderRadius: `${INNER_RADIUS}px` }}
         >
           {videoSrc ? (

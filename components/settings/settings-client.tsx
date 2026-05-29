@@ -122,18 +122,20 @@ export default function SettingsClient({
   const [compactSidebar, setCompactSidebar] = useState(
     initialSettings.compactSidebar,
   );
-  const [soloMode, setSoloMode] = useState(initialSettings.soloMode);
-  const [leaderboardUpdates, setLeaderboardUpdates] = useState(
-    initialSettings.leaderboardUpdates,
-  );
   const [sessionReminders, setSessionReminders] = useState(
     initialSettings.sessionReminders,
   );
-  const [friendActivity, setFriendActivity] = useState(
-    initialSettings.friendActivity,
-  );
-  const [roomInvites, setRoomInvites] = useState(initialSettings.roomInvites);
   const [showMotionMessage, setShowMotionMessage] = useState(false);
+
+  // Sync compactSidebar state when sidebar toggle changes it
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ compactSidebar: boolean }>).detail;
+      setCompactSidebar(detail.compactSidebar);
+    };
+    window.addEventListener('app:compact-sidebar-changed', handler);
+    return () => window.removeEventListener('app:compact-sidebar-changed', handler);
+  }, []);
 
   function revokeCropBlob() {
     const u = cropBlobUrlRef.current;
@@ -156,24 +158,8 @@ export default function SettingsClient({
         initialSettings.compactSidebar ? '1' : '0',
       );
       localStorage.setItem(
-        'swm:leaderboard-updates',
-        initialSettings.leaderboardUpdates ? '1' : '0',
-      );
-      localStorage.setItem(
         'swm:session-reminders',
         initialSettings.sessionReminders ? '1' : '0',
-      );
-      localStorage.setItem(
-        'swm:friend-activity',
-        initialSettings.friendActivity ? '1' : '0',
-      );
-      localStorage.setItem(
-        'swm:room-invites',
-        initialSettings.roomInvites ? '1' : '0',
-      );
-      localStorage.setItem(
-        'swm:solo-mode',
-        initialSettings.soloMode ? '1' : '0',
       );
     } catch {}
   }, [initialSettings]);
@@ -520,62 +506,7 @@ export default function SettingsClient({
                 />
               }
             />
-            <SettingRow
-              label="Friend activity"
-              description="When friends start or finish a session"
-              control={
-                <Toggle
-                  checked={friendActivity}
-                  onChange={(next) => {
-                    setFriendActivity(next);
-                    persistFlag('swm:friend-activity', 'friendActivity', next);
-                  }}
-                />
-              }
-            />
-            <SettingRow
-              label="Room invites"
-              description="Pings when you're invited to a room"
-              control={
-                <Toggle
-                  checked={roomInvites}
-                  onChange={(next) => {
-                    setRoomInvites(next);
-                    persistFlag('swm:room-invites', 'roomInvites', next);
-                  }}
-                />
-              }
-            />
-            <SettingRow
-              label="Solo mode"
-              description="Hide social features — rooms, leaderboards, and multiplayer"
-              control={
-                <Toggle
-                  checked={soloMode}
-                  onChange={(next) => {
-                    setSoloMode(next);
-                    persistFlag('swm:solo-mode', 'soloMode', next);
-                  }}
-                />
-              }
-            />
-            <SettingRow
-              label="Leaderboard updates"
-              description="Weekly digest of your rank changes"
-              control={
-                <Toggle
-                  checked={leaderboardUpdates}
-                  onChange={(next) => {
-                    setLeaderboardUpdates(next);
-                    persistFlag(
-                      'swm:leaderboard-updates',
-                      'leaderboardUpdates',
-                      next,
-                    );
-                  }}
-                />
-              }
-            />
+            {/* Friend activity, room invites, solo mode, leaderboard updates — removed (rooms/leaderboard features not in use) */}
           </div>
         </div>
 

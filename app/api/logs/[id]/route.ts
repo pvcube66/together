@@ -13,7 +13,7 @@ const patchSchema = z.object({
   durationMin: z.number().int().min(0).max(1440).optional().nullable(),
   rating: z.number().int().min(1).max(10).optional().nullable(),
   date: z.string().datetime().optional(),
-  areaId: z.string().optional(),
+  areaId: z.string().optional().nullable(),
 });
 
 const SELECT_FIELDS = {

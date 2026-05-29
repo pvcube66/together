@@ -1,3 +1,4 @@
+import path from "path";
 import type { NextConfig } from "next";
 import { buildTrustedAuthOrigins } from "./lib/auth-urls";
 import withBundleAnalyzer from "@next/bundle-analyzer";
@@ -76,7 +77,20 @@ const nextConfig: NextConfig = {
       ? { NEXT_PUBLIC_SOCKET_URL: resolvedNextPublicSocket }
       : {}),
   },
-  serverExternalPackages: ["better-auth"],
+  outputFileTracingRoot: path.resolve(__dirname),
+  serverExternalPackages: ["better-auth", "@opentelemetry/sdk-node", "@opentelemetry/auto-instrumentations-node", "@opentelemetry/exporter-trace-otlp-http"],
+
+  webpack(config, { isServer }) {
+    if (isServer) {
+      const otelRegex = /@opentelemetry\/.+/;
+      if (Array.isArray(config.externals)) {
+        config.externals.push(otelRegex);
+      } else {
+        config.externals = [config.externals, otelRegex].filter(Boolean);
+      }
+    }
+    return config;
+  },
   ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
 
   async redirects() {

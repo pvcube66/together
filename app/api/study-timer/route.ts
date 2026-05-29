@@ -4,7 +4,9 @@ import { requireApiSession, withApi } from "@/lib/api-session";
 import { parseRequestJson } from "@/lib/api";
 import { limiters, enforce } from "@/lib/ratelimit";
 import {
+  pauseLiveStudySession,
   readTimerState,
+  resumeLiveStudySession,
   startLiveStudySession,
   stopLiveStudySession,
 } from "@/lib/study-live-session";
@@ -17,7 +19,7 @@ export const GET = withApi(async () => {
 });
 
 const postSchema = z.object({
-  action: z.enum(["start", "stop"]),
+  action: z.enum(["start", "stop", "pause", "resume"]),
   areaId: z.string().optional().nullable(),
 });
 
@@ -40,6 +42,24 @@ export const POST = withApi(async (request: Request) => {
     });
   }
 
+  if (parsed.data.action === "pause") {
+    const result = await pauseLiveStudySession(session.user.id);
+    if ("error" in result) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+    const timer = await readTimerState(session.user.id);
+    return NextResponse.json({ ok: true, timer });
+  }
+
+  if (parsed.data.action === "resume") {
+    const result = await resumeLiveStudySession(session.user.id);
+    if ("error" in result) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+    const timer = await readTimerState(session.user.id);
+    return NextResponse.json({ ok: true, timer });
+  }
+
   const stopped = await stopLiveStudySession(session.user.id);
   if ("error" in stopped) {
     return NextResponse.json({ error: stopped.error }, { status: 400 });
@@ -53,6 +73,8 @@ export const POST = withApi(async (request: Request) => {
       durationSec: stopped.durationSec,
       durationMin: stopped.durationMin,
       lifetimeFocusMinutes: stopped.lifetimeFocusMinutes,
+      logId: stopped.logId,
+      areaId: stopped.areaId,
     },
   });
 });

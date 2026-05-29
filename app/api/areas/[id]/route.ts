@@ -45,7 +45,7 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
       color: true,
       icon: true,
       createdAt: true,
-      _count: { select: { tasks: true, focusSessions: true, libraryItems: true } },
+      _count: { select: { tasks: true, focusSessions: true, libraryItems: true, activityLogs: true } },
     },
   });
 
@@ -60,17 +60,19 @@ export const DELETE = withApi(async (_request: Request, { params }: Params) => {
   const area = await resolveArea(id, session.user.id);
   if (!area) return NextResponse.json({ error: "Area not found." }, { status: 404 });
 
-  const [taskCount, sessionCount, libraryCount] = await Promise.all([
+  const [taskCount, sessionCount, libraryCount, logCount] = await Promise.all([
     prisma.task.count({ where: { areaId: id } }),
     prisma.focusSession.count({ where: { areaId: id } }),
     prisma.libraryItem.count({ where: { areaId: id } }),
+    prisma.activityLog.count({ where: { areaId: id } }),
   ]);
 
-  if (taskCount + sessionCount + libraryCount > 0) {
+  if (taskCount + sessionCount + libraryCount + logCount > 0) {
     await prisma.$transaction([
       prisma.task.updateMany({ where: { areaId: id }, data: { areaId: null } }),
       prisma.focusSession.updateMany({ where: { areaId: id }, data: { areaId: null } }),
       prisma.libraryItem.updateMany({ where: { areaId: id }, data: { areaId: null } }),
+      prisma.activityLog.updateMany({ where: { areaId: id }, data: { areaId: null } }),
       prisma.area.delete({ where: { id } }),
     ]);
   } else {

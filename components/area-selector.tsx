@@ -35,14 +35,31 @@ export default function AreaSelector({
         if (!res.ok) return;
         const data = (await res.json()) as { areas: Area[] };
         setAreas(data.areas);
+        setLoaded(true);
       } catch {
         /* ignore */
-      } finally {
-        setLoaded(true);
       }
     }
     void load();
   }, []);
+
+  // Re-fetch areas every time the dropdown opens (ensures fresh data)
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    async function refresh() {
+      try {
+        const res = await fetch('/api/areas', { cache: 'no-store' });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { areas: Area[] };
+        setAreas(data.areas);
+      } catch {
+        /* ignore */
+      }
+    }
+    void refresh();
+    return () => { cancelled = true; };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;

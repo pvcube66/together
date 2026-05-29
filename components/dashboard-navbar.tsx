@@ -1,13 +1,13 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { Coffee, Menu, Play, Square, Timer } from 'lucide-react';
+import { useRef } from 'react';
+import { Menu, Play, Pause, Square } from 'lucide-react';
 import { useServerUserSettings } from '@/components/server-user-settings';
 import { motion, AnimatePresence } from 'motion/react';
 import { useMobileNav } from '@/components/mobile-nav-context';
 import { useSound } from '@/components/sound-provider';
 import { useStudyTimer } from '@/components/study-timer-provider';
-import StartSessionPopover from '@/components/timer/start-session-popover';
+import { useSessionModal } from '@/components/timer/session-modal-provider';
 import SoundToggle from '@/components/sound-toggle';
 import ProfileDropdown from '@/components/profileDropdown';
 
@@ -19,10 +19,10 @@ type UserLite = {
 
 export default function DashboardNavbar({ user }: { user: UserLite }) {
   const { openMobileNav, toggleMobileNav, mobileNavOpen } = useMobileNav();
-  const { active, redisAvailable, busy, toggle, pomodoroEnabled, pomodoroPhase, pomodoroSecondsRemaining, pomodoroCycleCount, pomodoroFocusMinutes, pomodoroBreakMinutes, skipBreak } = useStudyTimer();
+  const { active, paused, redisAvailable, busy, pause, resume, toggle } = useStudyTimer();
   const settings = useServerUserSettings();
-  const startBtnRef = useRef<HTMLButtonElement>(null);
-  const [startPopoverOpen, setStartPopoverOpen] = useState(false);
+  const startBtnRef = useRef<HTMLButtonElement>(null); // used for active timer ring only
+  const { openSessionModal } = useSessionModal();
 
   const ddayText = (() => {
     const date = settings?.todoDdayDate;
@@ -63,28 +63,6 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
         className="shadow-float relative z-[138] ml-auto flex w-fit max-w-[min(100%,20rem)] items-center gap-0.5 rounded-2xl border border-border/50 bg-card/92 py-1 pl-1 pr-1 backdrop-blur-md
           lg:ml-0"
       >
-        {/* Pomodoro indicator (always visible) */}
-        <div
-          className="relative flex h-10 min-h-[40px] w-10 min-w-[40px] items-center justify-center rounded-xl bg-transparent text-foreground/80"
-          title={pomodoroEnabled ? `Pomodoro: ${pomodoroFocusMinutes}min focus / ${pomodoroBreakMinutes}min break — configure when starting a session` : 'Pomodoro off — enable when starting a session'}
-          aria-label="Pomodoro timer status"
-        >
-          {pomodoroEnabled ? (
-            <motion.span
-              className="flex items-center justify-center"
-              animate={pomodoroPhase === 'break' ? { rotate: [0, -10, 10, -5, 0] } : {}}
-              transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-            >
-              <Coffee size={14} strokeWidth={1.7} />
-            </motion.span>
-          ) : (
-            <span className="relative flex items-center justify-center opacity-40">
-              <Timer size={14} strokeWidth={1.5} />
-              <span className="absolute -right-0.5 -top-0.5 text-[6px]">off</span>
-            </span>
-          )}
-        </div>
-
         <div className="h-4 w-px bg-border/60" aria-hidden />
 
         {ddayText ? (
@@ -97,18 +75,29 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
           </div>
         ) : null}
 
-        {/* Pomodoro focus countdown visible during active session */}
-        {active && pomodoroEnabled && pomodoroPhase === null && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex h-10 min-h-[40px] items-center gap-1.5 rounded-xl border border-emerald-200/60 bg-emerald-50/80 px-3 text-emerald-700 shadow-sm dark:border-emerald-800/40 dark:bg-emerald-950/40 dark:text-emerald-300"
+        {active && (
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.96 }}
+            disabled={!redisAvailable || busy}
+            aria-label={paused ? 'Resume timer' : 'Pause timer'}
+            title={paused ? 'Resume timer' : 'Pause timer'}
+            onClick={() => {
+              play('tap');
+              if (paused) {
+                void resume();
+              } else {
+                void pause();
+              }
+            }}
+            className="relative flex h-10 min-h-[40px] w-10 min-w-[40px] items-center justify-center rounded-xl border-0 bg-transparent text-foreground/80 shadow-none [box-shadow:none] transition-colors hover:bg-muted/50 disabled:opacity-45"
           >
-            <Timer size={13} strokeWidth={1.7} className="shrink-0" />
-            <span className="tabular-nums text-[11px] font-medium">
-              {pomodoroFocusMinutes}m focus
-            </span>
-          </motion.div>
+            {paused ? (
+              <Play size={16} strokeWidth={1.8} className="translate-x-[0.5px]" />
+            ) : (
+              <Pause size={16} strokeWidth={2} />
+            )}
+          </motion.button>
         )}
 
         <motion.button
@@ -130,7 +119,7 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
             if (active) {
               void toggle();
             } else {
-              setStartPopoverOpen(true);
+              openSessionModal();
             }
           }}
           className="relative flex h-10 min-h-[40px] w-10 min-w-[40px] items-center justify-center rounded-xl border-0 bg-transparent text-foreground/80 shadow-none [box-shadow:none] transition-colors hover:bg-muted/50 disabled:opacity-45"
@@ -174,41 +163,6 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
           </motion.span>
         </motion.button>
 
-        {/* Unified start session popover (area selection + pomodoro settings) */}
-        <StartSessionPopover
-          open={startPopoverOpen}
-          onClose={() => setStartPopoverOpen(false)}
-          onSelect={(areaId) => {
-            void toggle(areaId);
-          }}
-          anchorRef={startBtnRef}
-        />
-
-        {/* Pomodoro break indicator */}
-        {pomodoroPhase === 'break' && (
-          <motion.button
-            initial={{ scale: 0.8, opacity: 0, y: 4 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.8, opacity: 0, y: -4 }}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.94 }}
-            onClick={() => skipBreak()}
-            title={`Break: ${Math.floor(pomodoroSecondsRemaining / 60)}:${String(pomodoroSecondsRemaining % 60).padStart(2, '0')} — Click to skip`}
-            aria-label={`Break time — ${Math.floor(pomodoroSecondsRemaining / 60)} minutes remaining. Click to skip.`}
-            className="flex h-10 min-h-[40px] items-center gap-1.5 rounded-xl border border-amber-200/60 bg-amber-50/80 px-3 text-amber-700 shadow-sm transition-colors dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-300 dark:shadow-amber-950/20"
-          >
-            <Coffee size={14} strokeWidth={1.7} className="shrink-0" />
-            <motion.span
-              className="tabular-nums text-[11px] font-medium"
-              key={Math.floor(pomodoroSecondsRemaining / 60) * 60 + (pomodoroSecondsRemaining % 60)}
-            >
-              {Math.floor(pomodoroSecondsRemaining / 60)}:{String(pomodoroSecondsRemaining % 60).padStart(2, '0')}
-            </motion.span>
-            {pomodoroCycleCount > 0 && (
-              <span className="-ml-0.5 text-[10px] font-semibold opacity-50 tabular-nums">#{pomodoroCycleCount}</span>
-            )}
-          </motion.button>
-        )}
         <SoundToggle className="border-0 bg-transparent shadow-none [box-shadow:none] hover:bg-muted/50" />
         <div className="h-4 w-px bg-border/60" aria-hidden />
         <div className="pl-0.5 pr-0.5">

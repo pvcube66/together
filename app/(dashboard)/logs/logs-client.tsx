@@ -10,11 +10,10 @@ import {
   Plus,
   Pencil,
   Trash2,
-  X,
-  Sparkles,
   Filter,
 } from 'lucide-react';
 import AreaSelector from '@/components/area-selector';
+import AddLogModal from '@/components/logs/add-log-modal';
 import { useSound } from '@/components/sound-provider';
 import { AnimatedCounter } from '@/components/animated-counter';
 
@@ -25,8 +24,8 @@ type LogItem = {
   durationMin: number | null;
   rating: number | null;
   date: string;
-  areaId: string;
-  area: { id: string; name: string; color: string; icon: string | null };
+  areaId: string | null;
+  area: { id: string; name: string; color: string; icon: string | null } | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -53,15 +52,6 @@ function LogsDashboard({
   const [deleteBusyId, setDeleteBusyId] = useState<string | null>(null);
   const [filterAreaId, setFilterAreaId] = useState<string | null>(null);
 
-  // Form State
-  const [title, setTitle] = useState('');
-  const [notes, setNotes] = useState('');
-  const [durationMin, setDurationMin] = useState('');
-  const [rating, setRating] = useState('7');
-  const [enableRating, setEnableRating] = useState(false);
-  const [areaId, setAreaId] = useState<string | null>(null);
-  const [dateStr, setDateStr] = useState(() => new Date().toISOString().slice(0, 10));
-
   const filteredLogs = useMemo(() => {
     if (!filterAreaId) return logs;
     return logs.filter((l) => l.areaId === filterAreaId);
@@ -69,26 +59,12 @@ function LogsDashboard({
 
   const openCreate = useCallback(() => {
     setEditId(null);
-    setTitle('');
-    setNotes('');
-    setDurationMin('');
-    setRating('7');
-    setEnableRating(false);
-    setAreaId(null);
-    setDateStr(new Date().toISOString().slice(0, 10));
     setShowForm(true);
     play('modalOpen');
   }, [play]);
 
   const openEdit = useCallback((log: LogItem) => {
     setEditId(log.id);
-    setTitle(log.title);
-    setNotes(log.notes ?? '');
-    setDurationMin(log.durationMin?.toString() ?? '');
-    setRating(log.rating?.toString() ?? '7');
-    setEnableRating(log.rating !== null);
-    setAreaId(log.areaId);
-    setDateStr(log.date.slice(0, 10));
     setShowForm(true);
     play('modalOpen');
   }, [play]);
@@ -100,23 +76,27 @@ function LogsDashboard({
     play('modalClose');
   }, [play]);
 
-  async function handleSave() {
-    if (!title.trim() || busy) return;
-    if (!areaId) {
-      alert('Please select an Area before saving.');
-      return;
-    }
+  async function handleSave(data: {
+    title: string;
+    notes: string;
+    durationMin: string;
+    rating: string;
+    enableRating: boolean;
+    areaId: string;
+    dateStr: string;
+  }) {
+    if (!data.title.trim() || busy) return;
     setBusy(true);
     try {
       const method = editId ? 'PATCH' : 'POST';
       const url = editId ? `/api/logs/${editId}` : '/api/logs';
       const body = {
-        title: title.trim(),
-        notes: notes.trim() || null,
-        durationMin: durationMin ? parseInt(durationMin, 10) : null,
-        rating: enableRating ? parseInt(rating, 10) : null,
-        date: new Date(dateStr).toISOString(),
-        areaId,
+        title: data.title.trim(),
+        notes: data.notes.trim() || null,
+        durationMin: data.durationMin ? parseInt(data.durationMin, 10) : null,
+        rating: data.enableRating ? parseInt(data.rating, 10) : null,
+        date: new Date(data.dateStr).toISOString(),
+        areaId: data.areaId,
       };
       const res = await fetch(url, {
         method,
@@ -272,9 +252,15 @@ function LogsDashboard({
                   <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 rounded-md border border-border/40 px-1.5 py-0.5">
-                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: log.area.color }} />
-                        {log.area.icon && <span>{log.area.icon}</span>}
-                        {log.area.name}
+                        {log.area ? (
+                          <>
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ background: log.area.color }} />
+                            {log.area.icon && <span>{log.area.icon}</span>}
+                            {log.area.name}
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground/60">No area</span>
+                        )}
                       </span>
                       <span className="flex items-center gap-1 text-[10px]">
                         <Calendar size={10} />
@@ -335,159 +321,14 @@ function LogsDashboard({
         )}
       </div>
 
-      {/* Single Generic Form Modal */}
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            className="fixed inset-0 z-[150] flex max-h-[100dvh] items-end justify-center overflow-y-auto overflow-x-hidden p-4 sm:items-center sm:p-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15, ease: [0, 0, 0.58, 1] }}
-            onClick={(e) => { if (e.target === e.currentTarget && !busy) closeForm(); }}
-          >
-            <div className="absolute inset-0 bg-background/25 backdrop-blur-sm" />
-            <motion.div
-              initial={{ y: 8, opacity: 0, scale: 0.985 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 8, opacity: 0, scale: 0.985 }}
-              transition={{ duration: 0.2, ease: [0, 0, 0.58, 1] }}
-              className="relative z-10 my-auto w-full max-w-lg rounded-xl border border-border/60 bg-card p-4 shadow-[var(--panel-shadow-modal)]"
-            >
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-[13px] font-semibold text-foreground">
-                  {editId ? 'Edit Log Entry' : 'Log New Activity'}
-                </h2>
-                <button
-                  type="button"
-                  onClick={closeForm}
-                  disabled={busy}
-                  className="flex h-7 w-7 items-center justify-center rounded-[6px] text-muted-foreground hover:bg-muted"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-
-              <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
-                {/* Title */}
-                <label className="block">
-                  <span className="mb-1 block text-[10.5px] text-muted-foreground">What did you do? (Title)</span>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Solved 3 LeetCode, Ran 5km, Meditated..."
-                    className="w-full rounded-md border border-border/70 bg-background px-3 py-2 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                    autoFocus
-                  />
-                </label>
-
-                {/* Area Dropdown Selector */}
-                <div>
-                  <AreaSelector
-                    value={areaId}
-                    onChange={setAreaId}
-                    label="Area (Required)"
-                    allowNull={false}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Duration */}
-                  <label className="block">
-                    <span className="mb-1 block text-[10.5px] text-muted-foreground">Duration (minutes)</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={durationMin}
-                      onChange={(e) => setDurationMin(e.target.value)}
-                      placeholder="e.g. 45"
-                      className="w-full rounded-md border border-border/70 bg-background px-3 py-2 text-[12px] text-foreground focus:outline-none"
-                    />
-                  </label>
-
-                  {/* Date */}
-                  <label className="block">
-                    <span className="mb-1 block text-[10.5px] text-muted-foreground">Date</span>
-                    <input
-                      type="date"
-                      value={dateStr}
-                      onChange={(e) => setDateStr(e.target.value)}
-                      className="w-full rounded-md border border-border/70 bg-background px-3 py-2 text-[12px] text-foreground focus:outline-none"
-                    />
-                  </label>
-                </div>
-
-                {/* Rating score slider */}
-                <div className="rounded-lg border border-border/40 bg-muted/10 p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground select-none cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={enableRating}
-                        onChange={(e) => setEnableRating(e.target.checked)}
-                        className="rounded border-border/70 text-cta focus:ring-cta"
-                      />
-                      Add Productivity / Effort Rating (1-10)
-                    </label>
-                  </div>
-                  {enableRating && (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-[11px] font-medium">
-                        <span className="text-muted-foreground">Score</span>
-                        <span className="text-foreground font-bold">{rating}/10</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={1}
-                        max={10}
-                        value={rating}
-                        onChange={(e) => setRating(e.target.value)}
-                        className="w-full h-1.5 rounded-full appearance-none bg-muted/80 accent-cta cursor-pointer
-                          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cta"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Notes */}
-                <label className="block">
-                  <span className="mb-1 block text-[10.5px] text-muted-foreground">Notes / Reflections (optional)</span>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
-                    placeholder="Reflections, wins, blockers..."
-                    className="w-full resize-none rounded-md border border-border/70 bg-background px-3 py-2 text-[12px] text-foreground focus:outline-none"
-                  />
-                </label>
-
-                {/* Form Buttons */}
-                <div className="flex justify-end gap-2 pt-1">
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.96 }}
-                    onClick={closeForm}
-                    disabled={busy}
-                    className="rounded-[6px] border border-border/70 bg-background px-3 py-1.5 text-[11px] font-medium text-foreground"
-                  >
-                    Cancel
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.96 }}
-                    onClick={() => void handleSave()}
-                    disabled={busy || !title.trim()}
-                    className="app-cta-surface rounded-[6px] px-3 py-1.5 text-[11px] font-medium text-cta-foreground disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {busy ? 'Saving...' : editId ? 'Save' : 'Log entry'}
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Full-blocking Add/Edit Log Modal */}
+      <AddLogModal
+        open={showForm}
+        editLog={editId ? logs.find((l) => l.id === editId) ?? null : null}
+        busy={busy}
+        onClose={closeForm}
+        onSave={(data) => { void handleSave(data); }}
+      />
     </div>
   );
 }

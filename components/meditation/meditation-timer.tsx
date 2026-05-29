@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, Square, Bell, Music, Volume2, Timer } from 'lucide-react';
+import { Play, Square, Bell, Music, Timer } from 'lucide-react';
 import { useSound } from '@/components/sound-provider';
 import { useWhiteNoise } from '@/components/white-noise-provider';
 import type { WhiteNoiseToneId } from '@/lib/ambient-sounds';

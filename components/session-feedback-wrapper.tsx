@@ -11,6 +11,8 @@ const SessionFeedbackModal = dynamic(
 type SessionData = {
   durationSec: number;
   durationMin: number;
+  logId?: string;
+  areaId?: string | null;
 };
 
 export default function SessionFeedbackWrapper() {
@@ -41,6 +43,8 @@ export default function SessionFeedbackWrapper() {
       data={{
         sessionDurationSec: sessionData.durationSec,
         sessionDurationMin: sessionData.durationMin,
+        logId: sessionData.logId,
+        areaId: sessionData.areaId ?? null,
       }}
       onClose={handleClose}
     />

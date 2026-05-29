@@ -71,6 +71,7 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
     );
 
     const timeout = window.setTimeout(() => {
+      if (!pendingRef.current.has(clientNonce)) return;
       if (pending.attempts < 3 && socket.connected) {
         void sendPending(clientNonce);
         return;

@@ -1,5 +1,6 @@
 export type TimerPayload = {
   active?: boolean;
+  paused?: boolean;
   startedAt?: string | null;
   todaySeconds?: number;
   dayKey?: string | null;
@@ -8,6 +9,7 @@ export type TimerPayload = {
 
 export type NormalizedTimerClientState = {
   active: boolean;
+  paused: boolean;
   startedAtMs: number | null;
   todaySeconds: number;
   dayKey: string | null;
@@ -29,6 +31,7 @@ export function normalizeTimerPayload(
 ): NormalizedTimerClientState {
   return {
     active: Boolean(payload?.active),
+    paused: Boolean(payload?.paused),
     startedAtMs: parseStartedAtMs(payload?.startedAt ?? null),
     todaySeconds: normalizeTodaySeconds(payload?.todaySeconds),
     dayKey: payload?.dayKey ?? null,

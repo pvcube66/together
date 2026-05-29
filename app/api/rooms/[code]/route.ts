@@ -3,6 +3,24 @@ import { prisma } from "@/lib/db";
 import { requireApiSession, withApi } from "@/lib/api-session";
 import { limiters, enforce } from "@/lib/ratelimit";
 
+async function notifyRoomDeleted(roomId: string) {
+  const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+  const secret = process.env.INTERNAL_API_SECRET;
+  if (!socketUrl || !secret) return;
+  try {
+    await fetch(`${socketUrl}/internal/room-deleted`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-internal-secret': secret,
+      },
+      body: JSON.stringify({ roomId }),
+    });
+  } catch {
+    // Best-effort: members will be evicted on next socket interaction
+  }
+}
+
 type Params = { params: Promise<{ code: string }> };
 
 export const GET = withApi(async (request: Request, { params }: Params) => {
@@ -43,6 +61,7 @@ export const DELETE = withApi(async (_request: Request, { params }: Params) => {
 
   if (room.hostId === session.user.id) {
     await prisma.room.delete({ where: { id: room.id } });
+    await notifyRoomDeleted(room.id);
     return NextResponse.json({ deleted: true });
   }
 

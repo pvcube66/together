@@ -80,6 +80,47 @@ const httpServer = createServer(async (request, response) => {
     return;
   }
 
+  if (normalizedPath === '/internal/room-deleted') {
+    if (request.method !== 'POST') {
+      response.writeHead(405);
+      response.end();
+      return;
+    }
+    const secret = process.env.INTERNAL_API_SECRET;
+    if (!secret) {
+      response.writeHead(500, { 'content-type': 'application/json' });
+      response.end(JSON.stringify({ error: 'internal_secret_not_configured' }));
+      return;
+    }
+    const authHeader = request.headers['x-internal-secret'] ?? '';
+    if (authHeader !== secret) {
+      response.writeHead(403, { 'content-type': 'application/json' });
+      response.end(JSON.stringify({ error: 'forbidden' }));
+      return;
+    }
+    try {
+      const body = await new Promise<string>((resolve, reject) => {
+        let data = '';
+        request.on('data', (chunk) => { data += chunk; });
+        request.on('end', () => resolve(data));
+        request.on('error', reject);
+      });
+      const { roomId } = JSON.parse(body) as { roomId?: string };
+      if (!roomId) {
+        response.writeHead(400, { 'content-type': 'application/json' });
+        response.end(JSON.stringify({ error: 'roomId_required' }));
+        return;
+      }
+      io.to(roomId).emit('room:deleted', { roomId });
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end(JSON.stringify({ ok: true }));
+    } catch {
+      response.writeHead(400, { 'content-type': 'application/json' });
+      response.end(JSON.stringify({ error: 'invalid_body' }));
+    }
+    return;
+  }
+
   if (normalizedPath === '/health') {
     try {
       const [dbOk, redisOk] = await Promise.all([

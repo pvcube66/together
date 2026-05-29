@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
@@ -63,6 +63,7 @@ export default function TodoComponent({
   const [tasks, setTasks] = useState(initialTasks);
   const pathname = usePathname();
   const { play } = useSound();
+  const opSeqRef = useRef<Map<string, number>>(new Map());
 
   const now = new Date();
   const dayName = DAY_NAMES[now.getDay()];
@@ -78,7 +79,7 @@ export default function TodoComponent({
 
     async function refreshTodos() {
       try {
-        const res = await fetch('/api/tasks?limit=24', {
+        const res = await fetch('/api/tasks?limit=100', {
           credentials: 'include',
           cache: 'no-store',
         });
@@ -139,6 +140,8 @@ export default function TodoComponent({
   const handleToggle = async (task: TaskItem) => {
     const previousCompleted = task.isCompleted;
     const nextCompleted = !previousCompleted;
+    const nextSeq = (opSeqRef.current.get(task.id) ?? 0) + 1;
+    opSeqRef.current.set(task.id, nextSeq);
     
     // Optimistic UI update
     setTasks((prev) =>
@@ -155,7 +158,7 @@ export default function TodoComponent({
         body: JSON.stringify({ isCompleted: nextCompleted }),
       });
       if (!res.ok) {
-        // Rollback
+        if (opSeqRef.current.get(task.id) !== nextSeq) return;
         setTasks((prev) =>
           prev.map((t) =>
             t.id === task.id ? { ...t, isCompleted: previousCompleted } : t
@@ -164,7 +167,7 @@ export default function TodoComponent({
         play('error');
       }
     } catch {
-      // Rollback
+      if (opSeqRef.current.get(task.id) !== nextSeq) return;
       setTasks((prev) =>
         prev.map((t) =>
           t.id === task.id ? { ...t, isCompleted: previousCompleted } : t

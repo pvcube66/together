@@ -2,6 +2,7 @@ import { getDailyKey } from "@/lib/periods";
 
 export type TimerState = {
   active: boolean;
+  paused: boolean;
   startedAt: string | null;
   todaySeconds: number;
   dayKey: string;
@@ -10,6 +11,7 @@ export type TimerState = {
 
 export function buildTimerState(params: {
   active: boolean;
+  paused?: boolean;
   startedAt: string | null;
   todaySeconds: number;
   redisAvailable?: boolean;
@@ -18,6 +20,7 @@ export function buildTimerState(params: {
   const now = params.now ?? new Date();
   return {
     active: params.active,
+    paused: params.paused ?? false,
     startedAt: params.startedAt,
     todaySeconds: Math.max(0, Math.floor(params.todaySeconds)),
     dayKey: getDailyKey(now),

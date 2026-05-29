@@ -6,13 +6,11 @@ import {
   Flame,
   Clock,
   Zap,
-  Target,
   Sparkles,
   ClipboardList,
   Star,
   Activity,
   Award,
-  CheckSquare,
   Layers,
   BarChart3,
 } from 'lucide-react';

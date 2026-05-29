@@ -214,15 +214,15 @@ export default async function ReviewAndRecordsPage() {
         durationMin: longestActivity.durationMin!,
         title: longestActivity.title,
         date: longestActivity.date.toISOString(),
-        areaName: longestActivity.area.name,
-        areaColor: longestActivity.area.color,
+        areaName: longestActivity.area?.name ?? 'No area',
+        areaColor: longestActivity.area?.color ?? '#6366f1',
       } : null}
       bestRatingActivity={bestRatingActivity ? {
         rating: bestRatingActivity.rating!,
         title: bestRatingActivity.title,
         date: bestRatingActivity.date.toISOString(),
-        areaName: bestRatingActivity.area.name,
-        areaColor: bestRatingActivity.area.color,
+        areaName: bestRatingActivity.area?.name ?? 'No area',
+        areaColor: bestRatingActivity.area?.color ?? '#6366f1',
       } : null}
     />
   );

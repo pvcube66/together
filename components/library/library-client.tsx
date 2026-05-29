@@ -1,11 +1,11 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Check,
-  ExternalLink,
   Pencil,
   Pause,
   Play,
@@ -375,11 +375,12 @@ export default function LibraryClient({
                     {/* Thumbnail Preview */}
                     <div className="relative aspect-video w-full overflow-hidden bg-muted/20">
                       {item.videoId ? (
-                        <img
+                        <Image
                           src={`https://i.ytimg.com/vi/${item.videoId}/hqdefault.jpg`}
                           alt=""
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          loading="lazy"
+                          fill
+                          sizes="(max-width: 768px) 50vw, 33vw"
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       ) : (
                         <div 

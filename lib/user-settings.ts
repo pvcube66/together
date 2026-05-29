@@ -13,9 +13,6 @@ export type SerializedUserSettings = {
   todoDdayTitle: string;
   todoWeeklyGoal: number;
   todoMonthlyGoal: number;
-  pomodoroEnabled: boolean;
-  pomodoroFocusMinutes: number;
-  pomodoroBreakMinutes: number;
 };
 
 export const DEFAULT_USER_SETTINGS: SerializedUserSettings = {
@@ -31,9 +28,6 @@ export const DEFAULT_USER_SETTINGS: SerializedUserSettings = {
   todoDdayTitle: 'D-Day milestone',
   todoWeeklyGoal: 12,
   todoMonthlyGoal: 42,
-  pomodoroEnabled: false,
-  pomodoroFocusMinutes: 25,
-  pomodoroBreakMinutes: 5,
 };
 
 export function serializeUserSettings(
@@ -50,9 +44,6 @@ export function serializeUserSettings(
     todoDdayTitle: string | null;
     todoWeeklyGoal: number;
     todoMonthlyGoal: number;
-    pomodoroEnabled: boolean;
-    pomodoroFocusMinutes: number;
-    pomodoroBreakMinutes: number;
   } | null,
 ): SerializedUserSettings {
   if (!settings) return DEFAULT_USER_SETTINGS;
@@ -69,9 +60,6 @@ export function serializeUserSettings(
     todoDdayTitle: settings.todoDdayTitle ?? '',
     todoWeeklyGoal: settings.todoWeeklyGoal ?? DEFAULT_USER_SETTINGS.todoWeeklyGoal,
     todoMonthlyGoal: settings.todoMonthlyGoal ?? DEFAULT_USER_SETTINGS.todoMonthlyGoal,
-    pomodoroEnabled: settings.pomodoroEnabled,
-    pomodoroFocusMinutes: settings.pomodoroFocusMinutes,
-    pomodoroBreakMinutes: settings.pomodoroBreakMinutes,
   };
 }
 
@@ -92,10 +80,7 @@ export async function getOrCreateUserSettings(
     todoDdayTitle: true,
     todoWeeklyGoal: true,
     todoMonthlyGoal: true,
-    pomodoroEnabled: true,
-    pomodoroFocusMinutes: true,
-    pomodoroBreakMinutes: true,
-  };
+  } as const;
 
   try {
     let settings = await prisma.userSettings.findUnique({
@@ -120,7 +105,7 @@ export async function getOrCreateUserSettings(
     }
 
     return serializeUserSettings(settings);
-  } catch (error) {
+  } catch {
     try {
       const settings = await prisma.userSettings.upsert({
         where: { userId },

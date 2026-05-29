@@ -1,10 +1,5 @@
 import { redis } from "./redis";
 
-type SlidingWindow = {
-  windowMs: number;
-  max: number;
-};
-
 type LimitResult = {
   success: boolean;
   limit: number;

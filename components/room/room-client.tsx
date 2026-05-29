@@ -101,7 +101,7 @@ export default function RoomClient({
     startedAtMs: selfStartedAtMs,
     todaySeconds: selfTodaySeconds,
   } = useStudyTimer();
-  const [members] = useState<Member[]>(initialMembers);
+  const [members, setMembers] = useState<Member[]>(initialMembers);
   const [studyingUserIds, setStudyingUserIds] = useState<string[]>([]);
   const [videoEnabledUserIds, setVideoEnabledUserIds] = useState<string[]>([]);
   const [todayMinutes, setTodayMinutes] = useState<Record<string, number>>({});
@@ -170,6 +170,16 @@ export default function RoomClient({
       setTodayMinutes(payload.todayMinutes);
       setTodaySeconds(payload.todaySeconds);
       setSessionStartedAt(payload.sessionStartedAt);
+      // Reconcile member list from presence data
+      setMembers((prev) => {
+        const next = prev.filter((m) => payload.memberIds.includes(m.id));
+        for (const id of payload.memberIds) {
+          if (!prev.some((m) => m.id === id)) {
+            next.push({ id, name: 'Member', image: null, role: 'member' });
+          }
+        }
+        return next;
+      });
     };
 
     const onKicked = (payload: { roomId: string }) => {
@@ -182,9 +192,23 @@ export default function RoomClient({
       router.push('/rooms');
     };
 
+    const onRoomDeleted = (payload: { roomId: string }) => {
+      if (payload.roomId !== roomId) return;
+      void stopVideo();
+      toast('Room deleted', {
+        description: 'The host has deleted this room.',
+        duration: 4000,
+      });
+      router.push('/rooms');
+    };
+
+    const onConnectRef = { current: null as ((() => void) | null) };
+
     connectWithAuth().then((s) => {
       if (!s) return;
       socket = s;
+
+      let joined = false;
 
       const queuePresenceRefreshBurst = () => {
         clearRefreshTimers();
@@ -196,7 +220,9 @@ export default function RoomClient({
         );
       };
 
-      const joinRoom = () => {
+      const onConnect = () => {
+        if (joined) return;
+        joined = true;
         s.emit(
           'room:join',
           { roomId },
@@ -210,15 +236,19 @@ export default function RoomClient({
         );
       };
 
-      joinRoom();
+      onConnectRef.current = onConnect;
 
-      const onConnect = () => {
-        joinRoom();
-      };
+      if (s.connected) {
+        onConnect();
+      }
 
       s.on('presence', onPresence);
       s.on('room:kicked', onKicked);
+      s.on('room:deleted', onRoomDeleted);
       s.on('connect', onConnect);
+      s.on('room:error', (err: { message?: string }) => {
+        toast(err.message ?? 'An error occurred');
+      });
 
       keepAliveId = setInterval(() => {
         if (s.connected) s.emit('presence:refresh');
@@ -232,8 +262,8 @@ export default function RoomClient({
         socket.emit('room:leave', { roomId });
         socket.off('presence', onPresence);
         socket.off('room:kicked', onKicked);
-        // We can't easily remove onConnect since it's defined inside the then block,
-        // but it's fine since the component is unmounting.
+        socket.off('room:deleted', onRoomDeleted);
+        if (onConnectRef.current) socket.off('connect', onConnectRef.current);
       }
       stopVideo();
     };
@@ -242,6 +272,9 @@ export default function RoomClient({
   async function leaveMembership() {
     setLeaving(true);
     await stopVideo();
+    // Emit room:leave via socket before removing membership on the server
+    const sock = await connectWithAuth();
+    if (sock?.connected) sock.emit('room:leave', { roomId });
     try {
       await fetch(`/api/rooms/${code}`, { method: 'DELETE' });
       toast('Left room', {
@@ -384,7 +417,7 @@ export default function RoomClient({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98, y: 6 }}
                   transition={{ duration: 0.22, ease: [0, 0, 0.58, 1] }}
-                  className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[10px] border border-border/50 bg-[#161925]"
+                  className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[10px] border border-border/50 bg-neutral-950"
                 >
                   <button
                     type="button"
@@ -396,7 +429,7 @@ export default function RoomClient({
                   </button>
                   <div className="flex min-h-0 flex-1 items-center justify-center">
                     {focusHasVideo ? (
-                      <div className="h-full w-full bg-[#161925] p-2">
+                      <div className="h-full w-full bg-neutral-950 p-2">
                         {focusedMember.id === currentUserId ? (
                           <VideoSurface stream={localStream} muted />
                         ) : (
@@ -423,7 +456,7 @@ export default function RoomClient({
                     )}
                   </div>
                   <div className="pointer-events-none absolute bottom-3 left-0 right-0 flex justify-center">
-                    <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-[#161925]/65 px-2 py-1.5 text-white/90 backdrop-blur-md">
+                    <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-neutral-950/70 px-2 py-1.5 text-white/90 backdrop-blur-md">
                       <button
                         type="button"
                         disabled

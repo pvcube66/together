@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { Brain, Frown, Meh, Smile, Star, X, PenLine, Sparkles, SendHorizontal } from 'lucide-react';
+import { Brain, Frown, Meh, Smile, Star, X, PenLine, Sparkles, SendHorizontal, Calendar, Clock, LayoutGrid } from 'lucide-react';
 
 const MOODS = [
   { value: 1, icon: Frown, label: 'Distracted', color: 'text-rose-500', bg: 'bg-rose-500/10', borderSelected: 'border-rose-300/50' },
@@ -13,9 +13,18 @@ const MOODS = [
   { value: 9, icon: Sparkles, label: 'Excellent', color: 'text-violet-500', bg: 'bg-violet-500/10', borderSelected: 'border-violet-300/50' },
 ];
 
+type AreaOption = {
+  id: string;
+  name: string;
+  color: string;
+  icon: string | null;
+};
+
 type SessionFeedbackData = {
   sessionDurationSec: number;
   sessionDurationMin: number;
+  logId?: string;
+  areaId?: string | null;
 };
 
 export function useSessionFeedback() {
@@ -32,6 +41,11 @@ export function useSessionFeedback() {
   return { feedback, open, close };
 }
 
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 export default function SessionFeedbackModal({
   data,
   onClose,
@@ -41,14 +55,27 @@ export default function SessionFeedbackModal({
 }) {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(true);
+  const [title, setTitle] = useState('Focus session');
+  const [areaId, setAreaId] = useState<string | null>(data.areaId ?? null);
+  const [areas, setAreas] = useState<AreaOption[]>([]);
   const [mood, setMood] = useState<number | null>(null);
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const titleId = useId();
+  const todayStr = new Date().toISOString();
 
   useEffect(() => {
     queueMicrotask(() => setMounted(true));
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/areas', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.areas) setAreas(json.areas);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -75,25 +102,26 @@ export default function SessionFeedbackModal({
     if (saving || mood === null) return;
     setSaving(true);
     try {
-      // Try to save as an activity log entry
-      await fetch('/api/logs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: `Focus session${mood >= 7 ? ' 🎯' : mood >= 4 ? ' ✓' : ''}`,
-          notes: notes.trim() || `Rated ${mood}/10`,
-          durationMin: Math.round(data.sessionDurationMin),
-          rating: mood,
-          areaId: 'default', // This may fail if there's no default area, so we wrap in try/catch
-        }),
-      }).catch(() => { /* area might not exist */ });
+      const logId = data.logId;
+      if (logId) {
+        await fetch(`/api/logs/${logId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: title.trim() || 'Focus session',
+            rating: mood,
+            notes: notes.trim() || null,
+            areaId: areaId ?? null,
+          }),
+        });
+      }
     } catch { /* ignore */ }
     setSaved(true);
     setTimeout(() => {
       setSaving(false);
       handleClose();
     }, 600);
-  }, [saving, mood, notes, data, handleClose]);
+  }, [saving, mood, notes, title, areaId, data, handleClose]);
 
   const handleBackdrop = useCallback((e: React.MouseEvent) => {
     if (e.target === e.currentTarget && !saving) handleClose();
@@ -104,6 +132,8 @@ export default function SessionFeedbackModal({
   const durationStr = data.sessionDurationMin >= 60
     ? `${Math.floor(data.sessionDurationMin / 60)}h ${data.sessionDurationMin % 60}m`
     : `${data.sessionDurationMin}m`;
+
+  const selectedArea = areas.find((a) => a.id === areaId);
 
   return createPortal(
     <AnimatePresence initial={false} onExitComplete={onClose}>
@@ -142,17 +172,14 @@ export default function SessionFeedbackModal({
                     </motion.div>
                     <h3 className="text-[15px] font-bold text-foreground">Session logged</h3>
                     <p className="mt-1 text-[12px] text-muted-foreground">
-                      {durationStr} · {mood && `Rated ${mood}/10`}
+                      {title} · {durationStr} · {mood && `Rated ${mood}/10`}
                     </p>
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 id={titleId} className="text-[14px] font-bold text-foreground">Session complete</h3>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                          {durationStr} of focused study
-                        </p>
+                        <h3 id={titleId} className="text-[14px] font-bold text-foreground">Log your session</h3>
                       </div>
                       <button
                         type="button"
@@ -164,9 +191,64 @@ export default function SessionFeedbackModal({
                       </button>
                     </div>
 
+                    {/* Title */}
+                    <div className="mb-3">
+                      <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                        <PenLine size={12} />
+                        What did you do?
+                      </p>
+                      <input
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="e.g. Solved 3 LeetCode, Ran 5km, Meditated..."
+                        className="w-full rounded-xl border border-border/40 bg-muted/30 px-3 py-2.5 text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-border/70"
+                      />
+                    </div>
+
+                    {/* Duration + Date row */}
+                    <div className="mb-3 flex gap-2">
+                      <div className="flex-1 rounded-xl border border-border/40 bg-muted/30 px-3 py-2.5">
+                        <p className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                          <Clock size={10} />
+                          Duration
+                        </p>
+                        <p className="text-[13px] font-semibold text-foreground tabular-nums">{durationStr}</p>
+                      </div>
+                      <div className="flex-1 rounded-xl border border-border/40 bg-muted/30 px-3 py-2.5">
+                        <p className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                          <Calendar size={10} />
+                          Date
+                        </p>
+                        <p className="text-[13px] font-semibold text-foreground tabular-nums">{formatDate(todayStr)}</p>
+                      </div>
+                    </div>
+
+                    {/* Area */}
+                    <div className="mb-3">
+                      <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                        <LayoutGrid size={12} />
+                        Area
+                      </p>
+                      <select
+                        value={areaId ?? ''}
+                        onChange={(e) => setAreaId(e.target.value || null)}
+                        className="w-full rounded-xl border border-border/40 bg-muted/30 px-3 py-2.5 text-[12px] text-foreground focus:outline-none focus:border-border/70 appearance-none"
+                      >
+                        <option value="">No area</option>
+                        {areas.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </select>
+                      {!selectedArea && areaId && (
+                        <p className="text-[10px] text-muted-foreground/60 mt-1">{areaId}</p>
+                      )}
+                    </div>
+
                     {/* Mood picker */}
-                    <div className="mb-4">
-                      <p className="text-[11px] font-semibold text-muted-foreground mb-3 flex items-center gap-1.5">
+                    <div className="mb-3">
+                      <p className="text-[11px] font-semibold text-muted-foreground mb-2.5 flex items-center gap-1.5">
                         <Star size={12} />
                         How was your session?
                       </p>
@@ -180,14 +262,14 @@ export default function SessionFeedbackModal({
                               type="button"
                               whileTap={{ scale: 0.92 }}
                               onClick={() => setMood(m.value)}
-                              className={`flex flex-col items-center gap-1 rounded-xl border p-2.5 transition-all min-w-0 flex-1 ${
+                              className={`flex flex-col items-center gap-1 rounded-xl border p-2 transition-all min-w-0 flex-1 ${
                                 selected
                                   ? `${m.bg} ${m.color} ${m.borderSelected}`
                                   : 'border-border/40 text-muted-foreground/60 hover:border-border/70 hover:text-muted-foreground hover:bg-muted/50'
                               }`}
                             >
-                              <Icon size={18} strokeWidth={selected ? 2 : 1.5} />
-                              <span className={`text-[8px] font-semibold uppercase tracking-wider ${selected ? '' : 'text-muted-foreground/50'}`}>
+                              <Icon size={16} strokeWidth={selected ? 2 : 1.5} />
+                              <span className={`text-[7px] font-semibold uppercase tracking-wider ${selected ? '' : 'text-muted-foreground/50'}`}>
                                 {m.label}
                               </span>
                             </motion.button>
@@ -196,16 +278,15 @@ export default function SessionFeedbackModal({
                       </div>
                     </div>
 
-                    {/* Optional note */}
+                    {/* Notes */}
                     <div className="mb-4">
                       <div className="relative">
-                        <PenLine size={12} className="absolute left-3 top-3 text-muted-foreground/40" />
                         <textarea
                           value={notes}
                           onChange={(e) => setNotes(e.target.value)}
-                          placeholder="Add a note (optional)..."
+                          placeholder="Notes / Reflections (optional)..."
                           rows={2}
-                          className="w-full resize-none rounded-xl border border-border/40 bg-muted/30 pl-8 pr-3 py-2.5 text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-border/70"
+                          className="w-full resize-none rounded-xl border border-border/40 bg-muted/30 px-3 py-2.5 text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-border/70"
                         />
                       </div>
                     </div>

@@ -7,15 +7,6 @@ import FriendsPanel, {
 } from '@/components/profile/friends-panel';
 import ProfileHeaderEditor from '@/components/profile/profile-header-editor';
 import { ProfileStats } from '@/components/profile/profile-stats-client';
-import {
-  formatMinutesClock,
-  formatMinutesCompact,
-} from '@/lib/study-time-format';
-
-function formatMin(min: number): string {
-  return formatMinutesCompact(min);
-}
-
 export default async function ProfilePage() {
   const session = await requireSession();
   const userId = session.user.id;
@@ -201,15 +192,6 @@ export default async function ProfilePage() {
   const thisWeek = weekAgg._sum.totalMinutes ?? 0;
   const thisMonth = monthAgg._sum.totalMinutes ?? 0;
   const lifetime = user?.lifetimeFocusMinutes ?? 0;
-
-  const STATS = [
-    { label: 'Today', value: formatMin(today) },
-    { label: 'This Week', value: formatMin(thisWeek) },
-    { label: 'This Month', value: formatMin(thisMonth) },
-    { label: 'Lifetime', value: formatMin(lifetime) },
-    { label: 'Current Streak', value: `${streakRow?.currentStreak ?? 0}d` },
-    { label: 'Longest Streak', value: `${streakRow?.longestStreak ?? 0}d` },
-  ];
 
   const collaboratorCandidates = relatedRoomMemberships.flatMap((membership) =>
     membership.room.members

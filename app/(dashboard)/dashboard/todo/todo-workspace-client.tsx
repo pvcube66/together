@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { CalendarDays, CheckSquare, Goal, Layers, Pencil, Plus, X } from 'lucide-react';
+import { CalendarDays, CheckSquare, Goal, Pencil, Plus, X } from 'lucide-react';
 import AreaSelector from '@/components/area-selector';
 import { useSound } from '@/components/sound-provider';
 import { AnimatedCounter } from '@/components/animated-counter';
@@ -204,7 +204,7 @@ export default function TodoWorkspaceClient({
   }, [weeklyGoal, monthlyGoal, play]);
 
   const done = tasks.filter((t) => t.isCompleted).length;
-  const dValue = dateDiff(new Date(dDay + 'T12:00:00'));
+  const dValue = dDay ? dateDiff(new Date(dDay + 'T12:00:00')) : NaN;
 
   useEffect(() => {
     setDDay(initialDdayDate);
@@ -665,9 +665,11 @@ export default function TodoWorkspaceClient({
                   />
                 </label>
               </div>
-              <p className="mt-2 text-[11px] font-medium text-muted-foreground tabular-nums">
-                D{dValue >= 0 ? `-${dValue}` : `+${Math.abs(dValue)}`}
-              </p>
+              {dDay && (
+                <p className="mt-2 text-[11px] font-medium text-muted-foreground tabular-nums">
+                  D{dValue >= 0 ? `-${dValue}` : `+${Math.abs(dValue)}`}
+                </p>
+              )}
             </div>
 
             <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-4">

@@ -6,7 +6,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import { toast } from 'sonner';
@@ -18,10 +17,9 @@ import {
   type TimerPayload,
 } from '@/lib/timer-client-state';
 
-type PomodoroPhase = 'focus' | 'break' | null;
-
 type StudyTimerState = {
   active: boolean;
+  paused: boolean;
   startedAtMs: number | null;
   todaySeconds: number;
   dayKey: string | null;
@@ -29,21 +27,9 @@ type StudyTimerState = {
   elapsedSeconds: number;
   busy: boolean;
   toggle: (areaId?: string | null) => Promise<void>;
+  pause: () => Promise<void>;
+  resume: () => Promise<void>;
   refresh: () => Promise<void>;
-  // Pomodoro
-  pomodoroEnabled: boolean;
-  pomodoroPhase: PomodoroPhase;
-  pomodoroEndAtMs: number | null;
-  pomodoroCycleCount: number;
-  pomodoroSecondsRemaining: number;
-  pomodoroFocusMinutes: number;
-  pomodoroBreakMinutes: number;
-  skipBreak: () => void;
-  updatePomodoroSettings: (settings: {
-    pomodoroEnabled: boolean;
-    pomodoroFocusMinutes: number;
-    pomodoroBreakMinutes: number;
-  }) => void;
 };
 
 const StudyTimerContext = createContext<StudyTimerState | null>(null);
@@ -54,32 +40,13 @@ export function StudyTimerProvider({
   children: React.ReactNode;
 }) {
   const [active, setActive] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [startedAtMs, setStartedAtMs] = useState<number | null>(null);
   const [todaySeconds, setTodaySeconds] = useState(0);
   const [dayKey, setDayKey] = useState<string | null>(null);
   const [redisAvailable, setRedisAvailable] = useState(true);
   const [busy, setBusy] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
-  // Pomodoro state
-  const [pomodoroEnabled, setPomodoroEnabled] = useState(false);
-  const [pomodoroFocusMinutes, setPomodoroFocusMinutes] = useState(25);
-  const [pomodoroBreakMinutes, setPomodoroBreakMinutes] = useState(5);
-  const [pomodoroPhase, setPomodoroPhase] = useState<PomodoroPhase>(null);
-  const [pomodoroEndAtMs, setPomodoroEndAtMs] = useState<number | null>(null);
-  const [pomodoroCycleCount, setPomodoroCycleCount] = useState(0);
-  const pomodoroTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Load pomodoro settings from localStorage on mount
-  useEffect(() => {
-    try {
-      const enabled = localStorage.getItem('swm:pomodoro-enabled');
-      const focus = localStorage.getItem('swm:pomodoro-focus-minutes');
-      const brk = localStorage.getItem('swm:pomodoro-break-minutes');
-      if (enabled !== null) setPomodoroEnabled(enabled === '1');
-      if (focus !== null) setPomodoroFocusMinutes(Number(focus) || 25);
-      if (brk !== null) setPomodoroBreakMinutes(Number(brk) || 5);
-    } catch {}
-  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -94,6 +61,7 @@ export function StudyTimerProvider({
       const next = normalizeTimerPayload(data.timer);
       setRedisAvailable(next.redisAvailable);
       setActive(next.active);
+      setPaused(next.paused);
       setStartedAtMs(next.startedAtMs);
       setDayKey((prevDayKey) => {
         setTodaySeconds((prevSeconds) =>
@@ -165,90 +133,19 @@ export function StudyTimerProvider({
     };
   }, [refresh]);
 
-  const elapsedSeconds = useMemo(() => {
-    if (!active || startedAtMs === null) return 0;
-    return Math.max(0, Math.floor((nowMs - startedAtMs) / 1000));
-  }, [active, startedAtMs, nowMs]);
-
-  // Pomodoro break countdown tick
-  useEffect(() => {
-    if (pomodoroPhase !== 'break' || pomodoroEndAtMs === null) {
-      if (pomodoroTimerRef.current) {
-        clearInterval(pomodoroTimerRef.current);
-        pomodoroTimerRef.current = null;
-      }
-      return;
-    }
-    const tick = () => {
-      const remaining = Math.max(0, Math.floor((pomodoroEndAtMs - Date.now()) / 1000));
-      if (remaining <= 0) {
-        setPomodoroPhase(null);
-        setPomodoroEndAtMs(null);
-        if (pomodoroTimerRef.current) {
-          clearInterval(pomodoroTimerRef.current);
-          pomodoroTimerRef.current = null;
-        }
-        toast('Break over!', {
-          description: 'Ready for another focus session?',
-          duration: 5000,
-        });
-      }
-    };
-    tick();
-    pomodoroTimerRef.current = setInterval(tick, 1000);
-    return () => {
-      if (pomodoroTimerRef.current) {
-        clearInterval(pomodoroTimerRef.current);
-        pomodoroTimerRef.current = null;
-      }
-    };
-  }, [pomodoroPhase, pomodoroEndAtMs]);
-
-  // Put the nowMs tick on always so pomodoro countdown stays accurate
+  // Tick the clock every second for elapsed time
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const pomodoroSecondsRemaining = useMemo(() => {
-    if (pomodoroEndAtMs === null) return 0;
-    return Math.max(0, Math.floor((pomodoroEndAtMs - Date.now()) / 1000));
-  }, [pomodoroEndAtMs, nowMs]);
+  const [frozenElapsed, setFrozenElapsed] = useState(0);
 
-  const skipBreak = useCallback(() => {
-    setPomodoroPhase(null);
-    setPomodoroEndAtMs(null);
-    if (pomodoroTimerRef.current) {
-      clearInterval(pomodoroTimerRef.current);
-      pomodoroTimerRef.current = null;
-    }
-  }, []);
-
-  const updatePomodoroSettings = useCallback((settings: {
-    pomodoroEnabled: boolean;
-    pomodoroFocusMinutes: number;
-    pomodoroBreakMinutes: number;
-  }) => {
-    setPomodoroEnabled(settings.pomodoroEnabled);
-    setPomodoroFocusMinutes(settings.pomodoroFocusMinutes);
-    setPomodoroBreakMinutes(settings.pomodoroBreakMinutes);
-    // Persist to localStorage
-    try {
-      localStorage.setItem('swm:pomodoro-enabled', settings.pomodoroEnabled ? '1' : '0');
-      localStorage.setItem('swm:pomodoro-focus-minutes', String(settings.pomodoroFocusMinutes));
-      localStorage.setItem('swm:pomodoro-break-minutes', String(settings.pomodoroBreakMinutes));
-    } catch {}
-    // Persist to server
-    void fetch('/api/settings', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        pomodoroEnabled: settings.pomodoroEnabled,
-        pomodoroFocusMinutes: settings.pomodoroFocusMinutes,
-        pomodoroBreakMinutes: settings.pomodoroBreakMinutes,
-      }),
-    }).catch(() => {});
-  }, []);
+  const elapsedSeconds = useMemo(() => {
+    if (!active || startedAtMs === null) return 0;
+    if (paused) return frozenElapsed;
+    return Math.max(0, Math.floor((nowMs - startedAtMs) / 1000));
+  }, [active, paused, startedAtMs, nowMs, frozenElapsed]);
 
   const toggle = useCallback(async (areaId?: string | null) => {
     if (busy) return;
@@ -266,6 +163,9 @@ export function StudyTimerProvider({
         timer?: TimerPayload;
         session?: {
           durationSec?: number;
+          durationMin?: number;
+          logId?: string;
+          areaId?: string | null;
         };
       };
       if (!res.ok) {
@@ -276,9 +176,8 @@ export function StudyTimerProvider({
       const next = normalizeTimerPayload(data.timer);
       if (data.timer) {
         setActive(next.active);
+        setPaused(next.paused);
         setStartedAtMs(next.startedAtMs);
-        // Stop responses can occasionally race with redis read-after-write.
-        // Reconcile locally using authoritative returned durationSec so UI never regresses.
         if (action === 'stop') {
           const durationSec = Math.max(
             0,
@@ -288,30 +187,23 @@ export function StudyTimerProvider({
             Math.max(next.todaySeconds, prev + durationSec),
           );
           const minutes = Math.floor(durationSec / 60);
-          if (minutes > 0) {
-            toast('Session complete', {
-              description: `You studied for ${minutes} minute${minutes !== 1 ? 's' : ''}`,
-              duration: 4000,
-            });
-            // Dispatch session feedback event
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(
-                new CustomEvent('session-complete', {
-                  detail: { durationSec, durationMin: minutes },
-                }),
-              );
-            }
-          }
-          // Auto-enter break mode if pomodoro is enabled and session was long enough
-          if (pomodoroEnabled && minutes >= pomodoroFocusMinutes && pomodoroPhase !== 'break') {
-            const breakMs = pomodoroBreakMinutes * 60 * 1000;
-            setPomodoroPhase('break');
-            setPomodoroEndAtMs(Date.now() + breakMs);
-            setPomodoroCycleCount((c) => c + 1);
-            toast('Pomodoro complete!', {
-              description: `Take a ${pomodoroBreakMinutes}-minute break`,
-              duration: 5000,
-            });
+          toast('Session complete', {
+            description: minutes > 0
+              ? `You studied for ${minutes} minute${minutes !== 1 ? 's' : ''}`
+              : 'Focus session ended',
+            duration: 4000,
+          });
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('session-complete', {
+                detail: {
+                  durationSec,
+                  durationMin: minutes,
+                  logId: data.session?.logId,
+                  areaId: data.session?.areaId ?? null,
+                },
+              }),
+            );
           }
         } else {
           toast('Timer started', {
@@ -319,15 +211,10 @@ export function StudyTimerProvider({
             duration: 2000,
           });
           setTodaySeconds(next.todaySeconds);
-          // Clear any lingering pomodoro break phase
-          if (pomodoroPhase === 'break') {
-            skipBreak();
-          }
         }
         setDayKey(next.dayKey);
         setRedisAvailable(next.redisAvailable);
       }
-      // Avoid immediate re-read clobbering newer local state; periodic/focus refresh still converges.
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('study-stats-changed'));
       }
@@ -335,12 +222,71 @@ export function StudyTimerProvider({
     } finally {
       setBusy(false);
     }
-  }, [active, busy, refresh, pomodoroEnabled, pomodoroFocusMinutes, pomodoroBreakMinutes, pomodoroPhase, skipBreak]);
+  }, [active, busy, refresh]);
+
+  const pause = useCallback(async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      setFrozenElapsed(elapsedSeconds);
+      const res = await fetch('/api/study-timer', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'pause' }),
+      });
+      const data = (await res.json()) as { error?: string; timer?: TimerPayload };
+      if (!res.ok) {
+        console.warn('[study-timer pause]', data.error ?? res.status);
+        await refresh();
+        return;
+      }
+      if (data.timer) {
+        const next = normalizeTimerPayload(data.timer);
+        setActive(next.active);
+        setPaused(next.paused);
+        setStartedAtMs(next.startedAtMs);
+        setDayKey(next.dayKey);
+      }
+      toast('Timer paused', { duration: 2000 });
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, elapsedSeconds, refresh]);
+
+  const resume = useCallback(async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch('/api/study-timer', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'resume' }),
+      });
+      const data = (await res.json()) as { error?: string; timer?: TimerPayload };
+      if (!res.ok) {
+        console.warn('[study-timer resume]', data.error ?? res.status);
+        await refresh();
+        return;
+      }
+      if (data.timer) {
+        const next = normalizeTimerPayload(data.timer);
+        setActive(next.active);
+        setPaused(next.paused);
+        setStartedAtMs(next.startedAtMs);
+        setDayKey(next.dayKey);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, refresh]);
 
   const value = useMemo(
     () =>
       ({
         active,
+        paused,
         startedAtMs,
         todaySeconds,
         dayKey,
@@ -348,19 +294,13 @@ export function StudyTimerProvider({
         elapsedSeconds,
         busy,
         toggle,
+        pause,
+        resume,
         refresh,
-        pomodoroEnabled,
-        pomodoroPhase,
-        pomodoroEndAtMs,
-        pomodoroCycleCount,
-        pomodoroSecondsRemaining,
-        pomodoroFocusMinutes,
-        pomodoroBreakMinutes,
-        skipBreak,
-        updatePomodoroSettings,
       }) satisfies StudyTimerState,
     [
       active,
+      paused,
       startedAtMs,
       todaySeconds,
       dayKey,
@@ -368,16 +308,9 @@ export function StudyTimerProvider({
       elapsedSeconds,
       busy,
       toggle,
+      pause,
+      resume,
       refresh,
-      pomodoroEnabled,
-      pomodoroPhase,
-      pomodoroEndAtMs,
-      pomodoroCycleCount,
-      pomodoroSecondsRemaining,
-      pomodoroFocusMinutes,
-      pomodoroBreakMinutes,
-      skipBreak,
-      updatePomodoroSettings,
     ],
   );
 

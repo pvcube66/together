@@ -238,7 +238,7 @@ export default function RoomLeaderboardCarousel({
                   'relative flex min-h-[7.5rem] w-full flex-col overflow-hidden rounded-[6px] border border-border/50 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background ' +
                   (cardClickable ? 'cursor-pointer ' : '') +
                   (showVideoTile
-                    ? 'bg-[#161925] ring-1 ring-[#161925]/90'
+                    ? 'bg-neutral-950 ring-1 ring-white/10'
                     : 'bg-card ring-1 ring-inset ring-black/[0.03] transition-[background-color] duration-150 hover:bg-muted/35 dark:ring-white/[0.045]')
                 }
               >
@@ -246,7 +246,7 @@ export default function RoomLeaderboardCarousel({
                   <>
                     <GridMemberVideo stream={stream} />
                     <div
-                      className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#161925]/92 via-[#161925]/38 to-transparent pt-8 pb-1.5"
+                      className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-neutral-950/92 via-neutral-950/38 to-transparent pt-8 pb-1.5"
                       aria-hidden
                     />
                     <div className="pointer-events-none absolute inset-x-0 bottom-1.5 px-2 text-center">
@@ -295,7 +295,7 @@ export default function RoomLeaderboardCarousel({
                         e.stopPropagation();
                         onToggleSelfCamera();
                       }}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/22 bg-[#161925]/58 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-[#161925]/72 disabled:opacity-60"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/22 bg-neutral-950/60 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-neutral-950/75 disabled:opacity-60"
                       aria-label={
                         selfCameraOn ? 'Turn camera off' : 'Turn camera on'
                       }
@@ -317,7 +317,7 @@ export default function RoomLeaderboardCarousel({
                 )}
 
                 {videoMode && !isSelf && hasVideo && !stream && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-[#161925]/91">
+                  <div className="absolute inset-0 flex items-center justify-center bg-neutral-950/90">
                     <p className="text-[10px] text-white/70">Connecting…</p>
                   </div>
                 )}

@@ -9,6 +9,8 @@ export type LiveSessionPayload = {
   startedAt: string;
   roomId: string | null;
   areaId?: string | null;
+  pausedTotalSec?: number;
+  pausedAt?: string | null;
 };
 
 export function liveSessionRedisKey(userId: string): string {
@@ -50,19 +52,32 @@ function secondsUntilNextFiveAmLocal(now = new Date()): number {
   return Math.max(1, Math.ceil((nextReset.getTime() - now.getTime()) / 1000));
 }
 
+function effectiveElapsedSec(live: LiveSessionPayload): number {
+  const completedAt = new Date();
+  const startedAt = new Date(live.startedAt);
+  const rawSec = Math.max(0, Math.floor((completedAt.getTime() - startedAt.getTime()) / 1_000));
+  const pausedTotalSec = live.pausedTotalSec ?? 0;
+  // If currently paused, add the current pause duration
+  let totalPausedSec = pausedTotalSec;
+  if (live.pausedAt) {
+    const pausedAt = new Date(live.pausedAt);
+    totalPausedSec += Math.max(0, Math.floor((completedAt.getTime() - pausedAt.getTime()) / 1_000));
+  }
+  return Math.max(1, rawSec - totalPausedSec);
+}
+
 export async function finalizeLiveStudySession(
   userId: string,
   live: LiveSessionPayload,
-): Promise<{ durationMin: number; durationSec: number; lifetimeFocusMinutes: number }> {
+): Promise<{ durationMin: number; durationSec: number; lifetimeFocusMinutes: number; logId: string; areaId: string | null }> {
   const completedAt = new Date();
-  const startedAt = new Date(live.startedAt);
-  const durationSec = Math.max(1, Math.floor((completedAt.getTime() - startedAt.getTime()) / 1_000));
+  const durationSec = effectiveElapsedSec(live);
   const durationMin = Math.max(1, Math.floor(durationSec / 60));
   const studyDayStart = getStudyDayStart(completedAt);
   const roomId = live.roomId ?? null;
   const areaId = live.areaId ?? null;
 
-  const [, updatedUser] = await prisma.$transaction([
+  const [, updatedUser, log] = await prisma.$transaction([
     prisma.focusSession.create({
       data: {
         userId,
@@ -75,6 +90,15 @@ export async function finalizeLiveStudySession(
     prisma.user.update({
       where: { id: userId },
       data: { lifetimeFocusMinutes: { increment: durationMin } },
+    }),
+    prisma.activityLog.create({
+      data: {
+        userId,
+        title: 'Focus session',
+        durationMin,
+        areaId,
+        date: completedAt,
+      },
     }),
     prisma.dailyStats.upsert({
       where: { userId_date: { userId, date: studyDayStart } },
@@ -93,7 +117,7 @@ export async function finalizeLiveStudySession(
   await bumpLeaderboards(userId, durationMin, completedAt);
   await bumpStreak(userId, completedAt);
 
-  return { durationMin, durationSec, lifetimeFocusMinutes: updatedUser.lifetimeFocusMinutes };
+  return { durationMin, durationSec, lifetimeFocusMinutes: updatedUser.lifetimeFocusMinutes, logId: log.id, areaId: log.areaId };
 }
 
 const LIVE_SESSION_TTL_SEC = 12 * 60 * 60;
@@ -133,7 +157,7 @@ export async function startLiveStudySession(
 
 export async function stopLiveStudySession(
   userId: string,
-): Promise<{ durationSec: number; durationMin: number; lifetimeFocusMinutes: number } | { error: string }> {
+): Promise<{ durationSec: number; durationMin: number; lifetimeFocusMinutes: number; logId: string; areaId: string | null } | { error: string }> {
   if (!redis) {
     return { error: "Study timer requires Redis in this deployment." };
   }
@@ -146,6 +170,39 @@ export async function stopLiveStudySession(
   return finalizeLiveStudySession(userId, live);
 }
 
+export async function pauseLiveStudySession(
+  userId: string,
+): Promise<{ ok: true } | { error: string }> {
+  if (!redis) return { error: "Study timer requires Redis in this deployment." };
+  const key = liveSessionRedisKey(userId);
+  const live = await redis.get<LiveSessionPayload>(key);
+  if (!live) return { error: "No active session." };
+  if (live.pausedAt) return { error: "Session already paused." };
+
+  const now = new Date().toISOString();
+  live.pausedAt = now;
+  await redis.set(key, live, { ex: LIVE_SESSION_TTL_SEC });
+  return { ok: true };
+}
+
+export async function resumeLiveStudySession(
+  userId: string,
+): Promise<{ ok: true } | { error: string }> {
+  if (!redis) return { error: "Study timer requires Redis in this deployment." };
+  const key = liveSessionRedisKey(userId);
+  const live = await redis.get<LiveSessionPayload>(key);
+  if (!live) return { error: "No active session." };
+  if (!live.pausedAt) return { error: "Session is not paused." };
+
+  const now = Date.now();
+  const pausedAtMs = new Date(live.pausedAt).getTime();
+  const pauseDurationSec = Math.max(0, Math.floor((now - pausedAtMs) / 1_000));
+  live.pausedTotalSec = (live.pausedTotalSec ?? 0) + pauseDurationSec;
+  live.pausedAt = null;
+  await redis.set(key, live, { ex: LIVE_SESSION_TTL_SEC });
+  return { ok: true };
+}
+
 export async function readLiveStudySession(userId: string): Promise<LiveSessionPayload | null> {
   if (!redis) return null;
   return redis.get<LiveSessionPayload>(liveSessionRedisKey(userId));
@@ -155,6 +212,7 @@ export async function readTimerState(userId: string): Promise<TimerState> {
   if (!redis) {
     return buildTimerState({
       active: false,
+      paused: false,
       startedAt: null,
       todaySeconds: 0,
       redisAvailable: false,
@@ -166,6 +224,7 @@ export async function readTimerState(userId: string): Promise<TimerState> {
   ]);
   return buildTimerState({
     active: live !== null,
+    paused: live?.pausedAt != null,
     startedAt: live?.startedAt ?? null,
     todaySeconds,
     redisAvailable: true,

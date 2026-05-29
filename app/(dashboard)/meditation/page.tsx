@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Wind, Timer, Sparkles, Flower2 } from 'lucide-react';
+import { Wind, Timer, Flower2 } from 'lucide-react';
 import BreathingExercise from '@/components/meditation/breathing-exercise';
 import MeditationTimer from '@/components/meditation/meditation-timer';
 

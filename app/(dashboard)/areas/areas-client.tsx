@@ -31,6 +31,7 @@ type AreaWithCounts = {
     tasks: number;
     focusSessions: number;
     libraryItems: number;
+    activityLogs: number;
   };
 };
 
@@ -112,7 +113,12 @@ export default function AreasClient({
 
   async function handleDelete(id: string) {
     if (deleteBusyId) return;
-    if (!window.confirm('Delete this area? Tasks, sessions, and library items will not be removed, but their area tag will be cleared.')) return;
+    const area = areas.find((a) => a.id === id);
+    const logCount = area?._count.activityLogs ?? 0;
+    const warn = logCount > 0
+      ? `Delete this area? ${logCount} activity log${logCount === 1 ? '' : 's'} will be unlinked. Tasks, focus sessions, and library items will also have their area tag cleared.`
+      : 'Delete this area? Tasks, focus sessions, and library items will have their area tag cleared.';
+    if (!window.confirm(warn)) return;
     setDeleteBusyId(id);
     const snapshot = areas;
     setAreas((prev) => prev.filter((a) => a.id !== id));
@@ -135,7 +141,7 @@ export default function AreasClient({
   }
 
   const totalItems = useCallback(
-    () => areas.reduce((sum, a) => sum + a._count.tasks + a._count.focusSessions + a._count.libraryItems, 0),
+    () => areas.reduce((sum, a) => sum + a._count.tasks + a._count.focusSessions + a._count.libraryItems + a._count.activityLogs, 0),
     [areas],
   );
 
@@ -218,10 +224,11 @@ export default function AreasClient({
                     </motion.button>
                   </div>
                 </div>
-                <div className="flex gap-3 text-[10.5px] text-muted-foreground">
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10.5px] text-muted-foreground">
                   <span>{area._count.tasks} tasks</span>
                   <span>{area._count.focusSessions} sessions</span>
                   <span>{area._count.libraryItems} library</span>
+                  <span>{area._count.activityLogs} logs</span>
                 </div>
               </motion.div>
             ))}

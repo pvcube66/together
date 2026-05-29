@@ -24,7 +24,7 @@ export const GET = withApi(async () => {
       color: true,
       icon: true,
       createdAt: true,
-      _count: { select: { tasks: true, focusSessions: true, libraryItems: true } },
+      _count: { select: { tasks: true, focusSessions: true, libraryItems: true, activityLogs: true } },
     },
   });
 
@@ -53,7 +53,7 @@ export const POST = withApi(async (request: Request) => {
       color: true,
       icon: true,
       createdAt: true,
-      _count: { select: { tasks: true, focusSessions: true, libraryItems: true } },
+      _count: { select: { tasks: true, focusSessions: true, libraryItems: true, activityLogs: true } },
     },
   });
 

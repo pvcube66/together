@@ -91,8 +91,15 @@ export default function StudyTimerInactivityGuard({
       } catch {
         // ignore
       }
+      // If the timer couldn't stop because busy was true, retry after a delay
+      if (active) {
+        await new Promise((r) => setTimeout(r, 500));
+        if (!busy && active) {
+          try { await toggle(); } catch { /* ignore */ }
+        }
+      }
     })();
-  }, [active, deadlineMs, nowMs, open, toggle]);
+  }, [active, deadlineMs, nowMs, open, toggle, busy]);
 
   const scheduleNextPrompt = () => {
     const current = Math.max(0, elapsedSeconds);
@@ -129,7 +136,7 @@ export default function StudyTimerInactivityGuard({
           transition={{ duration: 0.18, ease: [0, 0, 0.58, 1] }}
         >
           <motion.div
-            className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-black/25 backdrop-blur-[2px] dark:bg-black/60"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

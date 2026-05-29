@@ -96,37 +96,33 @@ export default function YouTubeEmbedPanel({
               allowFullScreen
             />
           ) : showDashboardLectureEmpty ? (
-            <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center relative overflow-hidden min-h-[220px]">
-              {/* Background radiant bloom using theme adaptive variables */}
-              <div className="absolute inset-0 bg-gradient-to-br from-card via-muted/30 to-card z-0" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,color-mix(in_oklch,var(--color-cta)_8%,transparent)_0%,transparent_75%)] animate-pulse z-0" style={{ animationDuration: '6s' }} />
-              
-              <div className="relative z-10 flex flex-col items-center max-w-[280px] sm:max-w-xs md:max-w-md">
-                {/* Glowing Icon Frame matching rest of design */}
-                <motion.div
-                  whileHover={{ scale: 1.08, rotate: 5 }}
-                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-cta/15 border border-cta/30 text-cta shadow-[0_0_15px_color-mix(in_oklch,var(--color-cta)_15%,transparent)]"
-                >
-                  <BookOpen size={24} className="animate-pulse" style={{ animationDuration: '3s' }} />
-                </motion.div>
+            <div className="flex h-full w-full flex-col items-center justify-center p-5 text-center relative overflow-hidden min-h-[200px]">
+              {/* Subtle background — matches the panel texture language */}
+              <div className="absolute inset-0 bg-gradient-to-b from-muted/[0.04] via-transparent to-muted/[0.02] z-0" />
 
-                <h3 className="text-[14px] sm:text-[15px] font-bold text-foreground tracking-tight text-balance leading-snug">
-                  Start Your Next Study Session
+              <div className="relative z-10 flex flex-col items-center max-w-[260px]">
+                {/* Clean icon frame — same pattern as FocusStats section headers */}
+                <div className="mb-3.5 flex h-8 w-8 items-center justify-center rounded-lg bg-cta/10 text-cta">
+                  <BookOpen size={15} strokeWidth={1.5} />
+                </div>
+
+                <h3 className="text-[13px] font-semibold tracking-tight text-foreground">
+                  Start a Study Session
                 </h3>
-                
-                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground text-pretty">
-                  Select a lecture from the study library to track your focus hours and watch seamlessly right on your dashboard.
+
+                <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                  Pick a lecture from the library and watch it here while tracking your focus time.
                 </p>
 
                 <motion.button
                   type="button"
-                  whileHover={{ scale: 1.03 }}
+                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={onWatchLecture}
-                  className="app-cta-surface mt-5 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-[11px] font-bold tracking-wide text-cta-foreground shadow-lg transition-transform"
+                  className="app-cta-surface mt-4 inline-flex items-center gap-1.5 rounded-[6px] px-3.5 py-2 text-[11px] font-medium text-cta-foreground transition-shadow"
                 >
-                  <span>Browse Library</span>
-                  <ArrowRight size={12} strokeWidth={2.5} />
+                  Browse Library
+                  <ArrowRight size={11} strokeWidth={2} />
                 </motion.button>
               </div>
             </div>

@@ -27,6 +27,7 @@ type ServerToClientEvents = {
   'ping:received': (payload: { fromUserId: string; createdAt: string }) => void;
   'room:error': (payload: { message: string }) => void;
   'room:kicked': (payload: { roomId: string }) => void;
+  'room:deleted': (payload: { roomId: string }) => void;
   'media:offer': (payload: {
     roomId: string;
     fromUserId: string;
