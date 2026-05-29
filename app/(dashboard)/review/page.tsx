@@ -218,7 +218,6 @@ export default async function ReviewAndRecordsPage() {
   const todayTotalMinutes = todayFocusMinutes + todayActivityMinutes;
 
   const todayAreaMap = new Map<string, { id: string; name: string; color: string; icon: string | null; minutes: number }>();
-  let todayMiscMinutes = 0;
   for (const s of todayFocusSessions) {
     if (s.area) {
       const existing = todayAreaMap.get(s.area.id);
@@ -227,10 +226,10 @@ export default async function ReviewAndRecordsPage() {
       } else {
         todayAreaMap.set(s.area.id, { ...s.area, minutes: s.durationMin });
       }
-    } else {
-      todayMiscMinutes += s.durationMin;
     }
   }
+  const todayAreaMinutes = Array.from(todayAreaMap.values()).reduce((s, a) => s + a.minutes, 0);
+  const todayMiscMinutes = todayTotalMinutes - todayAreaMinutes;
   if (todayMiscMinutes > 0) {
     todayAreaMap.set('__misc', { id: '__misc', name: 'Misc', color: '#888', icon: '📌', minutes: todayMiscMinutes });
   }
