@@ -22,6 +22,7 @@ type StudyTimerState = {
   paused: boolean;
   startedAtMs: number | null;
   todaySeconds: number;
+  todayMinutes: number;
   dayKey: string | null;
   redisAvailable: boolean;
   elapsedSeconds: number;
@@ -43,6 +44,7 @@ export function StudyTimerProvider({
   const [paused, setPaused] = useState(false);
   const [startedAtMs, setStartedAtMs] = useState<number | null>(null);
   const [todaySeconds, setTodaySeconds] = useState(0);
+  const [todayMinutes, setTodayMinutes] = useState(0);
   const [dayKey, setDayKey] = useState<string | null>(null);
   const [redisAvailable, setRedisAvailable] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -63,6 +65,7 @@ export function StudyTimerProvider({
       setActive(next.active);
       setPaused(next.paused);
       setStartedAtMs(next.startedAtMs);
+      setTodayMinutes(next.todayMinutes);
       setDayKey((prevDayKey) => {
         setTodaySeconds((prevSeconds) =>
           reconcileTodaySeconds({
@@ -289,6 +292,7 @@ export function StudyTimerProvider({
         paused,
         startedAtMs,
         todaySeconds,
+        todayMinutes,
         dayKey,
         redisAvailable,
         elapsedSeconds,
@@ -303,6 +307,7 @@ export function StudyTimerProvider({
       paused,
       startedAtMs,
       todaySeconds,
+      todayMinutes,
       dayKey,
       redisAvailable,
       elapsedSeconds,

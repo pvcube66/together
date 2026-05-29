@@ -108,16 +108,18 @@ function formatTodayClock(totalSeconds: number): string {
 }
 
 function StudyTimerDockControl() {
-  const { active, paused, elapsedSeconds, todaySeconds, redisAvailable, busy, toggle, pause, resume } =
+  const { active, paused, elapsedSeconds, todayMinutes, redisAvailable, busy, toggle, pause, resume } =
     useStudyTimer();
   const { play } = useSound();
   const { openSessionModal } = useSessionModal();
-  const idleLabel = formatTodayClock(todaySeconds);
 
-  /** Running: continue from today's logged minutes + current session (not a fresh 00:00 session). */
+  // Use persisted todayMinutes (from dailyStats) for idle display — matches Focus Stats & Today's Progress
+  const idleLabel = formatTodayClock(todayMinutes * 60);
+
+  // When active: show persisted minutes + current session elapsed seconds
   const activeTotalSeconds = computeSelfTimerTotalSeconds({
     active,
-    todaySeconds,
+    todaySeconds: todayMinutes * 60,
     elapsedSeconds,
   });
 

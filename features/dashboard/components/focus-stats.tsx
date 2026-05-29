@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { Timer, Flame, ArrowRight, Brain } from 'lucide-react';
@@ -57,7 +57,7 @@ export default function FocusStats({
   weeklyGoal: number;
   monthlyGoal: number;
 }) {
-  const { active, todaySeconds } = useStudyTimer();
+  const { active } = useStudyTimer();
   const [data, setData] = useState(initialData);
 
   // Refresh stats on mount and window focus
@@ -86,11 +86,7 @@ export default function FocusStats({
     };
   }, []);
 
-  // Merge local timer state into displayed today time
-  const displayTodayMinutes = useMemo(() => {
-    const base = data?.today ?? 0;
-    return Math.max(base, Math.floor(todaySeconds / 60));
-  }, [data?.today, todaySeconds]);
+  const displayTodayMinutes = data?.today ?? 0;
 
   const weekGoalMinutes = weeklyGoal * 60;
   const monthGoalMinutes = monthlyGoal * 60;

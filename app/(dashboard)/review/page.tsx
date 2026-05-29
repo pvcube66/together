@@ -44,6 +44,8 @@ export default async function ReviewAndRecordsPage() {
     todayFocusSessions,
     // 14. Today's activity logs
     todayActivityLogs,
+    // 15. Today's daily stats (canonical source for todayTotalMinutes)
+    todayDailyStats,
   ] = await Promise.all([
     // Weekly Focus Sessions
     prisma.focusSession.findMany({
@@ -146,6 +148,12 @@ export default async function ReviewAndRecordsPage() {
       },
     }),
 
+    // 15. Today's daily stats (canonical source for todayTotalMinutes)
+    prisma.dailyStats.aggregate({
+      where: { userId, date: { gte: todayStart, lt: todayEnd } },
+      _sum: { totalMinutes: true },
+    }),
+
   ]);
 
   // Weekly stats compilation
@@ -212,10 +220,8 @@ export default async function ReviewAndRecordsPage() {
     ? Math.round(ratingAggregation._avg.rating * 10) / 10
     : 0;
 
-  // Today's stats
-  const todayFocusMinutes = todayFocusSessions.reduce((s, f) => s + f.durationMin, 0);
-  const todayActivityMinutes = todayActivityLogs.reduce((s, l) => s + (l.durationMin ?? 0), 0);
-  const todayTotalMinutes = todayFocusMinutes + todayActivityMinutes;
+  // Today's stats (canonical source: dailyStats, same as /api/stats/me)
+  const todayTotalMinutes = todayDailyStats._sum.totalMinutes ?? 0;
 
   const todayAreaMap = new Map<string, { id: string; name: string; color: string; icon: string | null; minutes: number }>();
   for (const s of todayFocusSessions) {

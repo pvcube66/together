@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import { ArrowRight, Brain, Timer, CheckSquare2, Library, Music, Sparkles } from 'lucide-react';
+import { ArrowRight, Brain, Timer, CheckSquare2, Library, Music, Sparkles, BarChart3 } from 'lucide-react';
 import LandingCardStack from '@/components/landing-card-stack';
 
 const FEATURES = [
@@ -40,6 +40,13 @@ const FEATURES = [
     description: 'Track daily, weekly, and monthly focus hours. View streaks, rate your sessions, and grow consistency.',
     gradient: 'from-rose-500/20 to-pink-500/10',
     color: 'text-rose-600',
+  },
+  {
+    icon: BarChart3,
+    title: 'Weekly Review',
+    description: 'Consolidated weekly analytics with all-time personal bests. Share your daily progress card with friends.',
+    gradient: 'from-orange-500/20 to-amber-500/10',
+    color: 'text-orange-600',
   },
 ];
 

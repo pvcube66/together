@@ -3,6 +3,7 @@ export type TimerPayload = {
   paused?: boolean;
   startedAt?: string | null;
   todaySeconds?: number;
+  todayMinutes?: number;
   dayKey?: string | null;
   redisAvailable?: boolean;
 };
@@ -12,6 +13,7 @@ export type NormalizedTimerClientState = {
   paused: boolean;
   startedAtMs: number | null;
   todaySeconds: number;
+  todayMinutes: number;
   dayKey: string | null;
   redisAvailable: boolean;
 };
@@ -34,6 +36,7 @@ export function normalizeTimerPayload(
     paused: Boolean(payload?.paused),
     startedAtMs: parseStartedAtMs(payload?.startedAt ?? null),
     todaySeconds: normalizeTodaySeconds(payload?.todaySeconds),
+    todayMinutes: normalizeTodaySeconds(payload?.todayMinutes),
     dayKey: payload?.dayKey ?? null,
     redisAvailable: payload?.redisAvailable !== false,
   };
