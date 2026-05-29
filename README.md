@@ -1,221 +1,102 @@
 <div align="center">
-  <!-- TODO: Replace with your actual logo if you have one -->
-  <!-- <img src="./public/logo.png" alt="Curtus Logo" width="120" /> -->
-  
-  <h1>Curtus</h1>
-  <p><strong>A polished, web-based collaborative focus and study environment.</strong></p>
+  <h1>Together</h1>
+  <p><strong>A calm, focused study companion.</strong></p>
 
   <p>
-    <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js"></a>
+    <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-15-black?logo=next.js" alt="Next.js"></a>
     <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-Ready-blue?logo=typescript" alt="TypeScript"></a>
   </p>
 </div>
 
 <br />
 
-
-
-<br />
-
 ## About
 
-Curtus is a web-based platform designed to facilitate focused study and accountability. Made with a calm and polished user interface, it provides shared virtual spaces where users can work collaboratively in real-time.
+Together is a personal study tool built for focused, distraction-free work. Track your study sessions with a Pomodoro timer, organize tasks by area, save YouTube lectures, and review your progress — all in one place.
 
-Whether you're studying for exams or just need a quiet place to get work done alongside others, Curtus helps you stay on track without getting distracted.
-
----
-
-## Screenshots
-
-
-<div align="center">
-  <em>Screenshots removed</em>
-</div>
+This project is built on top of **[Curtus](https://github.com/dexisback/curtus)**, a polished open-source focus environment. I stripped out the collaborative features (study rooms, WebRTC video, real-time sockets) and kept what I actually use: the timer, tasks, library, sounds, and analytics.
 
 ---
 
 ## Features
 
-- **Study Rooms**: Join open community rooms or create private, invite-only rooms for you and your friends.
-- **WebRTC Video & Chat**: Peer-to-peer WebRTC mesh architecture for ultra-low latency video streaming, keeping you visually accountable alongside real-time text chat.
-- **Focus Timer**: Built-in study timers to track your deep work sessions automatically.
-- **Global Leaderboards**: Track your total study duration, maintain daily streaks, and view global rankings.
-- **Task & D-Day Tracking**: Organize daily to-dos and set countdowns for upcoming deadlines or exams.
-- **White Noise Library**: Built-in ambient audio to help you stay focused.
-- **YouTube Picture-in-Picture**: Watch lectures or ambient streams directly in the app without switching tabs.
-- **Configurable Environment**: Modify UI themes, timers, sound cues, and privacy controls to fit your workflow.
-
----
-
-## Architecture
-
-Curtus uses a decoupled architecture. The frontend handles standard requests and UI state, while a standalone Node.js server acts as the WebRTC signaling layer and real-time state synchronizer. Video feeds are established via direct peer-to-peer connections to minimize server bandwidth.
-
-```mermaid
-graph TD
-    Client["Web Client (Next.js and React)"]
-    PeerClient["Peer Web Client"]
-    
-    subgraph Frontend ["Next.js Web Server"]
-        NextApp["Next.js App Router"]
-        Auth["Better-Auth"]
-        NextApp <--> Auth
-    end
-    
-    subgraph Realtime ["Socket.IO Server"]
-        SocketServer["Standalone Node.js Server"]
-        Events["Signaling, Event Handlers and State Sync"]
-        SocketServer <--> Events
-    end
-    
-    subgraph Infrastructure ["Data and Caching"]
-        Postgres[("Neon Postgres DB")]
-        Prisma["Prisma ORM"]
-        Redis[("Upstash Redis")]
-        Prisma <--> Postgres
-    end
-
-    Client <-->|REST and RSC| NextApp
-    Client <-->|WebSockets| SocketServer
-    Client <-->|WebRTC P2P Mesh Video| PeerClient
-
-    NextApp <-->|Queries and Mutations| Prisma
-    SocketServer <-->|Queries and Mutations| Prisma
-    SocketServer <-->|PubSub and Presence| Redis
-    NextApp <-->|Rate Limiting| Redis
-```
+- **Focus Timer** — Pomodoro-style timer with configurable focus and break intervals. Tracks every session automatically.
+- **Smart Todo System** — Organize tasks by area, set deadlines, track weekly and monthly goals. D-Day countdown for milestones.
+- **Study Library** — Save YouTube lectures and playlists. Watch them in-app while your focus timer runs alongside.
+- **Ambient Sounds** — Built-in soundscapes (ocean waves, cafe bustle, etc.) to help you concentrate.
+- **Focus Analytics** — Daily, weekly, and monthly focus hours. View streaks, rate your sessions, and track consistency.
+- **Weekly Review** — Consolidated weekly analytics with all-time personal bests. Shareable daily progress card.
+- **Areas** — Organize everything (tasks, sessions, library items) into custom areas with colors and emoji icons.
+- **Configurable UI** — Light/dark themes, sound cues, and privacy controls.
 
 ---
 
 ## Tech Stack
 
-- **Frontend Application**: [Next.js 16](https://nextjs.org/) (App Router), React 19
-- **Video Streaming Layer**: WebRTC (P2P Mesh Network)
-- **Styling & Components**: [Tailwind CSS v4](https://tailwindcss.com/), Radix UI, Shadcn
-- **Animation**: [Framer Motion](https://www.framer.com/motion/), [GSAP](https://gsap.com/)
-- **Database Layer**: [Neon Postgres](https://neon.tech/), [Prisma v7 ORM](https://www.prisma.io/)
-- **Real-time Server**: [Socket.IO](https://socket.io/) (Node.js) for WebRTC signaling and data sync
-- **Caching & Rate Limiting**: [Upstash Redis](https://upstash.com/), RateLimit, QStash
-- **Observability**: OpenTelemetry, Prometheus, Grafana Cloud (Tempo)
-
----
-
-## Known Limitations
-
-- **Video Capacity Restrictions**: Video calls utilize a peer-to-peer (P2P) WebRTC mesh network architecture. Because each participant must send and receive streams to every other participant, bandwidth and CPU usage scale exponentially. Therefore, video streams are limited to a maximum of 4 concurrent users per room to maintain performance and client stability.
-- **Microphones Intentionally Disabled**: To strictly preserve the quiet, distraction-free "study library" atmosphere, audio transmission (microphones) is permanently disabled. Communication is strictly limited to text chat and visual accountability.
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router), React 19
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/), Motion (Framer Motion)
+- **Database**: Postgres + [Prisma v7 ORM](https://www.prisma.io/)
+- **Auth**: Better-Auth
+- **Caching**: Upstash Redis
 
 ---
 
 ## Getting Started
 
-Follow these instructions to set up the project locally for development.
-
 ### Prerequisites
 
 - **Node.js**: `v20.x`
-- **Package Manager**: npm
-- **Postgres Database**: Local instance or hosted (e.g., Neon)
-- **Redis**: Local instance or hosted (e.g., Upstash)
+- **Postgres Database** (local or hosted)
+- **Redis** (local or Upstash)
 
-### 1. Installation
-
-Clone the repository and install dependencies for both the Next.js application and the Socket.IO server:
+### 1. Install
 
 ```bash
-# Install Next.js dependencies
 npm ci
-
-# Install socket server dependencies
-npm ci --prefix server
 ```
 
-### 2. Environment Configuration
-
-Copy the example environment file:
+### 2. Environment
 
 ```bash
 cp .env.example .env
 ```
 
-**Required configuration:**
-- `DATABASE_URL` / `PRISMA_DATABASE_URL`: Postgres connection string.
-- `BETTER_AUTH_URL` / `BETTER_AUTH_SECRET`: Authentication credentials.
-- `UPSTASH_REDIS_URL` / `UPSTASH_REDIS_TOKEN`: Redis connection parameters.
-- `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_SOCKET_URL`: Public URIs for the frontend and socket server.
+Fill in `DATABASE_URL`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `UPSTASH_REDIS_URL`, and `UPSTASH_REDIS_TOKEN`.
 
-*(Note: OAuth keys such as `GOOGLE_CLIENT_ID` are optional but required for social login).*
-
-### 3. Database Initialization
-
-Generate the Prisma client and optionally seed the database:
+### 3. Database
 
 ```bash
-# Generate Prisma client
 npx prisma generate
-
-# Seed initial data
 npm run db:seed
 ```
 
-### 4. Running Development Servers
+### 4. Run
 
-Curtus requires both the Next.js web server and the Socket.IO server to run concurrently.
-
-**Terminal 1 (Next.js Application):**
 ```bash
 npm run dev
 ```
 
-**Terminal 2 (Socket.IO Server):**
-```bash
-npm run dev --prefix server
-```
-
-The application will be accessible at `http://localhost:3000`.
+The app will be available at `http://localhost:3000`.
 
 ---
 
 ## Available Scripts
 
-- `npm run dev` — Start the Next.js application in development mode.
-- `npm run build` — Create a production build of the Next.js application.
-- `npm start` — Run the compiled Next.js application.
-- `npm run check` — Execute ESLint and TypeScript type checking.
-- `npm test` — Run Vitest unit and integration tests.
-- `npm run format` — Format the codebase using Prettier.
+- `npm run dev` — Start the Next.js app in development mode.
+- `npm run build` — Create a production build.
+- `npm run start` — Run the compiled production build.
+- `npm run check` — Run ESLint and TypeScript checks.
+- `npm test` — Run Vitest tests.
+- `npm run format` — Format code with Prettier.
 
 ---
 
-## Observability
+## Credits
 
-This repository implements a robust observability pipeline:
-
-- **Structured JSON Logs**: Unified logging across web and socket servers with correlation parameters (`request_id`, `trace_id`, `room_id`).
-- **Distributed Tracing**: OpenTelemetry traces exported to Grafana Cloud Tempo.
-- **Metrics**: Socket server exposes a Prometheus metrics endpoint via `GET /metrics`.
-
-Refer to `docs/observability.md` and `docs/observability-runbook.md` for complete setup instructions.
-
----
-
-## Contributing
-
-Contributions are welcome. Please refer to our [Contribution Guidelines](CONTRIBUTING.md) to understand our workflow and expectations before submitting a pull request.
-
----
-
-## Credits & Acknowledgements
-
-A massive thank you to the **[Yeolpumta (YPT)](https://www.yeolpumta.com/en/)** app. I used YPT extensively during my high school exam days, and it served as a core inspiration for this app.
+This project is built on top of **[Curtus](https://github.com/dexisback/curtus)** by [@dextertwts/amaan](https://github.com/dextertwts). Curtus was originally inspired by the [Yeolpumta (YPT)](https://www.yeolpumta.com/en/) app.
 
 ---
 
 ## License
 
-Curtus is licensed under the **AGPL-3.0 License**.
-
-> **Important**: If you run a modified version of this software as a network service, the AGPL generally requires you to make the corresponding source code available to users of that service. Make sure you understand your obligations before deploying a modified build. See the [`LICENSE`](LICENSE) file for more details.
----
-
-Built with ❣️ by @dextertwts/amaan
+AGPL-3.0. See [LICENSE](LICENSE) for details.
