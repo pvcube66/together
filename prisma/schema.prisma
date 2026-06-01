@@ -81,6 +81,7 @@ model User {
   libraryItems  LibraryItem[]
   areas         Area[]
   activityLogs  ActivityLog[]
+  jobApplications JobApplication[]
 
   @@map("users")
 }
@@ -303,6 +304,35 @@ model ActivityLog {
 
   @@index([userId, date])
   @@map("activity_logs")
+}
+
+enum JobAppStatus {
+  SAVED
+  APPLIED
+  PHONE_SCREEN
+  TECHNICAL
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+model JobApplication {
+  id           String        @id @default(cuid())
+  companyName  String
+  role         String
+  date         DateTime      @default(now())
+  status       JobAppStatus  @default(SAVED)
+  notes        String?
+  url          String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date(sort: Desc)])
+  @@map("job_applications")
 }
 
 enum LibraryMediaKind {

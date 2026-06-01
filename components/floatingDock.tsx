@@ -3,6 +3,7 @@
 import { type ComponentType } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  Briefcase,
   Flower2,
   Library,
   Pause,
@@ -40,6 +41,12 @@ const DOCK_LINKS: DockItem[] = [
     label: 'Logs',
     href: '/logs',
     icon: ScrollText,
+  },
+  {
+    id: 'jobs',
+    label: 'Jobs',
+    href: '/jobs',
+    icon: Briefcase,
   },
   {
     id: 'meditation',

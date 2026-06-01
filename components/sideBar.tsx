@@ -12,6 +12,7 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   BarChart3,
+  Briefcase,
   CheckSquare,
   Layers,
   LibraryBig,
@@ -40,6 +41,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Library', href: '/library', icon: LibraryBig },
   { label: 'Logs', href: '/logs', icon: ClipboardList },
   { label: 'Review & Records', href: '/review', icon: BarChart3 },
+  { label: 'Jobs', href: '/jobs', icon: Briefcase },
   { label: 'Todo', href: '/dashboard/todo', icon: CheckSquare },
   { label: 'Profile', href: '/profile', icon: UserCircle },
   { label: 'Settings', href: '/settings', icon: Settings },
