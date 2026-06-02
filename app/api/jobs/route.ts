@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { JobAppStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireApiSession, withApi } from "@/lib/api-session";
 import { parseRequestJson } from "@/lib/api";
@@ -51,7 +52,7 @@ export const GET = withApi(async (request: Request) => {
   const items = await prisma.jobApplication.findMany({
     where: {
       userId: session.user.id,
-      ...(status ? { status: status as any } : {}),
+      ...(status ? { status: status as JobAppStatus } : {}),
       ...(cursor ? { id: { lt: cursor } } : {}),
     },
     orderBy: { date: "desc" },
@@ -88,7 +89,7 @@ export const POST = withApi(async (request: Request) => {
       companyName,
       role,
       date: date ? new Date(date) : new Date(),
-      status: (status ?? "SAVED") as any,
+      status: (status ?? "SAVED") as JobAppStatus,
       notes: notes || null,
       url: url || null,
       userId: session.user.id,

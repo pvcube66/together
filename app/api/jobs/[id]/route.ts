@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { JobAppStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireApiSession, withApi } from "@/lib/api-session";
 import { parseRequestJson } from "@/lib/api";
@@ -56,7 +57,7 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
       ...(companyName !== undefined ? { companyName } : {}),
       ...(role !== undefined ? { role } : {}),
       ...(date !== undefined ? { date: new Date(date) } : {}),
-      ...(status !== undefined ? { status: status as any } : {}),
+      ...(status !== undefined ? { status: status as JobAppStatus } : {}),
       ...(notes !== undefined ? { notes } : {}),
       ...(url !== undefined ? { url } : {}),
     },

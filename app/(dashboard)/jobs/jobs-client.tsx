@@ -4,7 +4,6 @@ import { Suspense, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Briefcase,
   Plus,
   Pencil,
   Trash2,
