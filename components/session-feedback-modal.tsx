@@ -24,6 +24,7 @@ type SessionFeedbackData = {
   sessionDurationSec: number;
   sessionDurationMin: number;
   logId?: string;
+  focusSessionId?: string;
   areaId?: string | null;
 };
 
@@ -113,6 +114,14 @@ export default function SessionFeedbackModal({
             notes: notes.trim() || null,
             areaId: areaId ?? null,
           }),
+        });
+      }
+      // Sync area change to the FocusSession if the user changed it
+      if (data.focusSessionId && areaId !== (data.areaId ?? null)) {
+        await fetch(`/api/sessions/${data.focusSessionId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ areaId: areaId ?? null }),
         });
       }
     } catch { /* ignore */ }

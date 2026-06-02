@@ -12,6 +12,7 @@ type SessionData = {
   durationSec: number;
   durationMin: number;
   logId?: string;
+  focusSessionId?: string;
   areaId?: string | null;
 };
 
@@ -44,6 +45,7 @@ export default function SessionFeedbackWrapper() {
         sessionDurationSec: sessionData.durationSec,
         sessionDurationMin: sessionData.durationMin,
         logId: sessionData.logId,
+        focusSessionId: sessionData.focusSessionId,
         areaId: sessionData.areaId ?? null,
       }}
       onClose={handleClose}

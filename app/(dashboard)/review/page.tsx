@@ -54,7 +54,7 @@ export default async function ReviewAndRecordsPage() {
     // Weekly Activity Logs
     prisma.activityLog.findMany({
       where: { userId, date: { gte: weekStart, lt: weekEnd } },
-      select: { durationMin: true, rating: true },
+      select: { title: true, durationMin: true, rating: true },
     }),
 
     // Weekly Tasks completed
@@ -93,8 +93,8 @@ export default async function ReviewAndRecordsPage() {
       select: { lifetimeFocusMinutes: true },
     }),
 
-    // Total activity count
-    prisma.activityLog.count({ where: { userId } }),
+    // Total activity count (exclude auto-generated Focus session logs)
+    prisma.activityLog.count({ where: { userId, title: { not: 'Focus session' } } }),
 
     // Average rating
     prisma.activityLog.aggregate({
@@ -102,9 +102,9 @@ export default async function ReviewAndRecordsPage() {
       _avg: { rating: true },
     }),
 
-    // Longest logged activity
+    // Longest logged activity (exclude auto-generated Focus session logs)
     prisma.activityLog.findFirst({
-      where: { userId, durationMin: { not: null } },
+      where: { userId, durationMin: { not: null }, title: { not: 'Focus session' } },
       orderBy: { durationMin: "desc" },
       select: {
         durationMin: true,
@@ -114,9 +114,9 @@ export default async function ReviewAndRecordsPage() {
       },
     }),
 
-    // Best rated activity
+    // Best rated activity (exclude auto-generated Focus session logs)
     prisma.activityLog.findFirst({
-      where: { userId, rating: { not: null } },
+      where: { userId, rating: { not: null }, title: { not: 'Focus session' } },
       orderBy: { rating: "desc" },
       select: {
         rating: true,
@@ -150,9 +150,12 @@ export default async function ReviewAndRecordsPage() {
 
   // Weekly stats compilation
   const weeklyStudyMinutes = focusSessionsThisWeek.reduce((s, f) => s + f.durationMin, 0);
-  const weeklyActivitiesCount = activityLogsThisWeek.length;
-  const weeklyActivityMinutes = activityLogsThisWeek.reduce((s, l) => s + (l.durationMin || 0), 0);
+  // Exclude auto-generated "Focus session" logs from duration count to avoid double-counting
+  const weeklyManualLogs = activityLogsThisWeek.filter((l) => l.title !== 'Focus session');
+  const weeklyActivitiesCount = weeklyManualLogs.length;
+  const weeklyActivityMinutes = weeklyManualLogs.reduce((s, l) => s + (l.durationMin || 0), 0);
   
+  // Rating includes all logs (auto-generated Focus session logs can have ratings from feedback modal)
   const weeklyRatedLogs = activityLogsThisWeek.filter((log) => log.rating !== null);
   const weeklyAvgProductivity = weeklyRatedLogs.length > 0
     ? Math.round((weeklyRatedLogs.reduce((s, l) => s + (l.rating || 0), 0) / weeklyRatedLogs.length) * 10) / 10
@@ -212,12 +215,19 @@ export default async function ReviewAndRecordsPage() {
     ? Math.round(ratingAggregation._avg.rating * 10) / 10
     : 0;
 
-  // Today's stats (direct from focusSession + activityLog — reliable source)
+  // Today's stats — FocusSession is the source of truth for study time.
+  // Auto-generated "Focus session" ActivityLogs (created alongside FocusSessions) are excluded
+  // from duration totals to avoid double-counting.
   const todayFocusMinutes = todayFocusSessions.reduce((s, f) => s + f.durationMin, 0);
-  const todayActivityMinutes = todayActivityLogs.reduce((s, l) => s + (l.durationMin ?? 0), 0);
-  const todayTotalMinutes = todayFocusMinutes + todayActivityMinutes;
+  const todayFocusLogActivityMinutes = todayActivityLogs
+    .filter((l) => l.title !== 'Focus session')
+    .reduce((s, l) => s + (l.durationMin ?? 0), 0);
+  const todayTotalMinutes = todayFocusMinutes + todayFocusLogActivityMinutes;
 
+  // Area breakdown: sum FocusSession minutes AND manual ActivityLog minutes per area
   const todayAreaMap = new Map<string, { id: string; name: string; color: string; icon: string | null; minutes: number }>();
+  
+  // Add focus session minutes per area
   for (const s of todayFocusSessions) {
     if (s.area) {
       const existing = todayAreaMap.get(s.area.id);
@@ -228,6 +238,20 @@ export default async function ReviewAndRecordsPage() {
       }
     }
   }
+  
+  // Add manual activity log minutes per area (skip auto-generated Focus session logs)
+  for (const l of todayActivityLogs) {
+    if (l.title === 'Focus session') continue;
+    if (l.area && l.durationMin) {
+      const existing = todayAreaMap.get(l.area.id);
+      if (existing) {
+        existing.minutes += l.durationMin;
+      } else {
+        todayAreaMap.set(l.area.id, { ...l.area, minutes: l.durationMin });
+      }
+    }
+  }
+  
   const todayAreaMinutes = Array.from(todayAreaMap.values()).reduce((s, a) => s + a.minutes, 0);
   const todayMiscMinutes = todayTotalMinutes - todayAreaMinutes;
   if (todayMiscMinutes > 0) {
@@ -235,6 +259,7 @@ export default async function ReviewAndRecordsPage() {
   }
   const todayAreaBreakdown = Array.from(todayAreaMap.values()).sort((a, b) => b.minutes - a.minutes);
 
+  // Rating includes all logs (auto-generated Focus session logs can have ratings from feedback modal)
   const todayRatedLogs = todayActivityLogs.filter((l) => l.rating !== null);
   const todayAvgRating = todayRatedLogs.length > 0
     ? Math.round((todayRatedLogs.reduce((s, l) => s + (l.rating ?? 0), 0) / todayRatedLogs.length) * 10) / 10
@@ -281,6 +306,7 @@ export default async function ReviewAndRecordsPage() {
       } : null}
       
       // Today's stats
+      userName={session.user.name ?? null}
       userImage={session.user.image ?? null}
       todayTotalMinutes={todayTotalMinutes}
       todayAreaBreakdown={todayAreaBreakdown}

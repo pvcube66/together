@@ -17,7 +17,7 @@ const createSchema = z.object({
   durationMin: z.number().int().min(0).max(1440).optional().nullable(),
   rating: z.number().int().min(1).max(10).optional().nullable(),
   date: z.string().datetime().optional(),
-  areaId: z.string().min(1),
+  areaId: z.string().min(1).optional().nullable(),
 });
 
 const SELECT_FIELDS = {
@@ -91,7 +91,7 @@ export const POST = withApi(async (request: Request) => {
       durationMin: durationMin ?? null,
       rating: rating ?? null,
       date: date ? new Date(date) : new Date(),
-      areaId,
+      areaId: areaId ?? null,
       userId: session.user.id,
     },
     select: SELECT_FIELDS,

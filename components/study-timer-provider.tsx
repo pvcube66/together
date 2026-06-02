@@ -168,6 +168,7 @@ export function StudyTimerProvider({
           durationSec?: number;
           durationMin?: number;
           logId?: string;
+          focusSessionId?: string;
           areaId?: string | null;
         };
       };
@@ -203,6 +204,7 @@ export function StudyTimerProvider({
                   durationSec,
                   durationMin: minutes,
                   logId: data.session?.logId,
+                  focusSessionId: data.session?.focusSessionId,
                   areaId: data.session?.areaId ?? null,
                 },
               }),

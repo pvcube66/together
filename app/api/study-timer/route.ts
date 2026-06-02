@@ -74,6 +74,7 @@ export const POST = withApi(async (request: Request) => {
       durationMin: stopped.durationMin,
       lifetimeFocusMinutes: stopped.lifetimeFocusMinutes,
       logId: stopped.logId,
+      focusSessionId: stopped.focusSessionId,
       areaId: stopped.areaId,
     },
   });

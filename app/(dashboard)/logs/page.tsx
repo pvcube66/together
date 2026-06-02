@@ -7,7 +7,7 @@ export default async function LogsPage() {
   const userId = session.user.id;
 
   const logs = await prisma.activityLog.findMany({
-    where: { userId },
+    where: { userId, title: { not: "Focus session" } },
     orderBy: { date: "desc" },
     take: 100,
     select: {

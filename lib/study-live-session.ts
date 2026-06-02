@@ -69,7 +69,7 @@ function effectiveElapsedSec(live: LiveSessionPayload): number {
 export async function finalizeLiveStudySession(
   userId: string,
   live: LiveSessionPayload,
-): Promise<{ durationMin: number; durationSec: number; lifetimeFocusMinutes: number; logId: string; areaId: string | null }> {
+): Promise<{ durationMin: number; durationSec: number; lifetimeFocusMinutes: number; logId: string; focusSessionId: string; areaId: string | null }> {
   const completedAt = new Date();
   const durationSec = effectiveElapsedSec(live);
   const durationMin = Math.max(1, Math.floor(durationSec / 60));
@@ -77,7 +77,7 @@ export async function finalizeLiveStudySession(
   const roomId = live.roomId ?? null;
   const areaId = live.areaId ?? null;
 
-  const [, updatedUser, log] = await prisma.$transaction([
+  const [session, updatedUser, log] = await prisma.$transaction([
     prisma.focusSession.create({
       data: {
         userId,
@@ -117,7 +117,7 @@ export async function finalizeLiveStudySession(
   await bumpLeaderboards(userId, durationMin, completedAt);
   await bumpStreak(userId, completedAt);
 
-  return { durationMin, durationSec, lifetimeFocusMinutes: updatedUser.lifetimeFocusMinutes, logId: log.id, areaId: log.areaId };
+  return { durationMin, durationSec, lifetimeFocusMinutes: updatedUser.lifetimeFocusMinutes, logId: log.id, focusSessionId: session.id, areaId: log.areaId };
 }
 
 const LIVE_SESSION_TTL_SEC = 12 * 60 * 60;
@@ -157,7 +157,7 @@ export async function startLiveStudySession(
 
 export async function stopLiveStudySession(
   userId: string,
-): Promise<{ durationSec: number; durationMin: number; lifetimeFocusMinutes: number; logId: string; areaId: string | null } | { error: string }> {
+): Promise<{ durationSec: number; durationMin: number; lifetimeFocusMinutes: number; logId: string; focusSessionId: string; areaId: string | null } | { error: string }> {
   if (!redis) {
     return { error: "Study timer requires Redis in this deployment." };
   }
@@ -229,7 +229,7 @@ export async function readTimerState(userId: string): Promise<TimerState> {
       _sum: { durationMin: true },
     }),
     prisma.activityLog.aggregate({
-      where: { userId, date: { gte: studyDayStart, lt: nextDay } },
+      where: { userId, date: { gte: studyDayStart, lt: nextDay }, title: { not: 'Focus session' } },
       _sum: { durationMin: true },
     }),
   ]);

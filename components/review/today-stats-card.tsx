@@ -69,6 +69,7 @@ const formatMin = (min: number) => {
 };
 
 export default function TodayStatsCard({
+  userName,
   userImage,
   totalMinutes,
   currentStreak,
@@ -76,6 +77,7 @@ export default function TodayStatsCard({
   avgRating,
   ratingCount,
 }: {
+  userName: string | null;
   userImage: string | null;
   totalMinutes: number;
   currentStreak: number;
@@ -110,15 +112,20 @@ export default function TodayStatsCard({
             <h3 className="text-[17px] font-bold text-foreground">Today&apos;s Progress</h3>
             <p className="text-[10px] font-medium text-muted-foreground/50 mt-0.5">{dateStr}</p>
           </div>
-          {userImage && (
-            <Image
-              src={userImage}
-              alt=""
-              width={72}
-              height={72}
-              className="rounded-full border-2 border-border/30 shrink-0"
-            />
-          )}
+          <div className="flex items-center gap-3">
+            {userName && (
+              <p className="text-[11px] font-semibold text-muted-foreground text-right leading-tight">{userName}</p>
+            )}
+            {userImage && (
+              <Image
+                src={userImage}
+                alt=""
+                width={72}
+                height={72}
+                className="rounded-full border-2 border-border/30 shrink-0"
+              />
+            )}
+          </div>
         </div>
 
         {!hasData ? (

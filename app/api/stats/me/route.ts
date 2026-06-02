@@ -73,8 +73,9 @@ export const GET = withApi(async () => {
         where: { userId, completedAt: { gte: todayStart, lt: nextDay } },
         _sum: { durationMin: true },
       }),
+      // Exclude auto-generated "Focus session" logs to avoid double-counting with FocusSessions
       prisma.activityLog.aggregate({
-        where: { userId, date: { gte: todayStart, lt: nextDay } },
+        where: { userId, date: { gte: todayStart, lt: nextDay }, title: { not: 'Focus session' } },
         _sum: { durationMin: true },
       }),
       prisma.focusSession.aggregate({
@@ -82,7 +83,7 @@ export const GET = withApi(async () => {
         _sum: { durationMin: true },
       }),
       prisma.activityLog.aggregate({
-        where: { userId, date: { gte: weekStart, lt: nextWeek } },
+        where: { userId, date: { gte: weekStart, lt: nextWeek }, title: { not: 'Focus session' } },
         _sum: { durationMin: true },
       }),
       prisma.focusSession.aggregate({
@@ -90,7 +91,7 @@ export const GET = withApi(async () => {
         _sum: { durationMin: true },
       }),
       prisma.activityLog.aggregate({
-        where: { userId, date: { gte: monthStart, lt: nextMonth } },
+        where: { userId, date: { gte: monthStart, lt: nextMonth }, title: { not: 'Focus session' } },
         _sum: { durationMin: true },
       }),
       // Daily totals for the last-7-days strip — use focusSession + activityLog
@@ -100,7 +101,7 @@ export const GET = withApi(async () => {
           select: { durationMin: true, completedAt: true },
         });
         const activityRows = await prisma.activityLog.findMany({
-          where: { userId, date: { gte: sevenDaysAgo, lte: todayStart } },
+          where: { userId, date: { gte: sevenDaysAgo, lte: todayStart }, title: { not: 'Focus session' } },
           select: { durationMin: true, date: true },
         });
         const dayMap = new Map<string, number>();
