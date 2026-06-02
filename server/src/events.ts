@@ -350,7 +350,7 @@ async function finalizeSession(
   const durationSec = Math.max(1, rawSec - totalPausedSec);
   const durationMin = Math.max(
     1,
-    Math.floor((completedAt.getTime() - startedAt.getTime()) / 60_000),
+    Math.floor(durationSec / 60),
   );
   const studyDayStart = getStudyDayStart(completedAt);
   const roomId = liveSession.roomId ?? null;
@@ -1138,79 +1138,9 @@ export function registerSocketEvents(io: StudyServer) {
         getLiveSessionKey(socket.data.userId),
       );
       if (liveSession) {
-        // Finalize quietly — no `session:logged` emit since socket is gone
         try {
-          const completedAt = new Date();
-          const startedAt = new Date(liveSession.startedAt);
-          const rawSec = Math.max(
-            1,
-            Math.floor((completedAt.getTime() - startedAt.getTime()) / 1_000),
-          );
-          const pausedTotalSec = liveSession.pausedTotalSec ?? 0;
-          let totalPausedSec = pausedTotalSec;
-          if (liveSession.pausedAt) {
-            const pausedAt = new Date(liveSession.pausedAt);
-            totalPausedSec += Math.max(0, Math.floor((completedAt.getTime() - pausedAt.getTime()) / 1_000));
-          }
-          const durationSec = Math.max(1, rawSec - totalPausedSec);
-          const durationMin = Math.max(
-            1,
-            Math.floor(durationSec / 60),
-          );
-          const studyDayStart = getStudyDayStart(completedAt);
-          const roomId = liveSession.roomId ?? null;
-          const areaId = liveSession.areaId ?? null;
-
-          await prisma.$transaction([
-            prisma.focusSession.create({
-              data: {
-                userId: socket.data.userId,
-                roomId,
-                areaId,
-                durationMin,
-                completedAt,
-              },
-            }),
-            prisma.user.update({
-              where: { id: socket.data.userId },
-              data: { lifetimeFocusMinutes: { increment: durationMin } },
-            }),
-            prisma.dailyStats.upsert({
-              where: {
-                userId_date: {
-                  userId: socket.data.userId,
-                  date: studyDayStart,
-                },
-              },
-              update: { totalMinutes: { increment: durationMin } },
-              create: {
-                userId: socket.data.userId,
-                date: studyDayStart,
-                totalMinutes: durationMin,
-              },
-            }),
-            prisma.activityLog.create({
-              data: {
-                userId: socket.data.userId,
-                title: 'Focus session',
-                durationMin,
-                areaId,
-                date: completedAt,
-              },
-            }),
-          ]);
-
-          await redis.incrby(
-            getTodayMinutesKey(socket.data.userId),
-            durationMin,
-          );
-          await redis.incrby(
-            getTodaySecondsKey(socket.data.userId),
-            durationSec,
-          );
-          await syncKeyExpiry(socket.data.userId);
-          await bumpLeaderboards(socket.data.userId, durationMin, completedAt);
-          await bumpStreak(socket.data.userId, completedAt);
+          // finalizeSession emits `session:logged` which is a no-op on a disconnected socket
+          await finalizeSession(io, socket, liveSession);
         } catch {}
       }
 

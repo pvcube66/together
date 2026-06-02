@@ -42,10 +42,10 @@ function LoginPageContent() {
         disableRedirect: true,
       });
 
-      console.log("[Social Sign-in Result]:", result);
+      if (process.env.NODE_ENV !== 'production') console.log("[Social Sign-in Result]:", result);
 
       if (result?.error) {
-        console.error("[Social Sign-in Error Details]:", result.error);
+        if (process.env.NODE_ENV !== 'production') console.error("[Social Sign-in Error Details]:", result.error);
         setAuthError(result.error.message || 'OAuth sign-in could not start.');
         setPendingProvider(null);
         return;
