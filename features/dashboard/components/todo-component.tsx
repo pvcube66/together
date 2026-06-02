@@ -3,14 +3,11 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import {
   CheckSquare2,
-  Calendar,
   Clock,
   ArrowUpRight,
-  CheckCircle2,
-  Circle,
   Plus,
   Sparkles,
   Check,
@@ -204,7 +201,7 @@ export default function TodoComponent({
                 <CheckSquare2 size={15} />
               </div>
               <h2 className="text-[14px] font-bold tracking-tight text-foreground">
-                Today's Agenda
+                Today&apos;s Agenda
               </h2>
             </div>
             <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">

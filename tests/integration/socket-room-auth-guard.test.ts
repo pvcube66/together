@@ -19,11 +19,13 @@ const redisMock = {
 vi.mock('../../server/src/db.js', () => ({
   prisma: {
     roomMember: { findUnique: roomMemberFindUniqueMock },
+    room: { findUnique: vi.fn().mockResolvedValue({ id: 'room-1' }) },
     message: { upsert: vi.fn() },
     ping: { create: vi.fn() },
     focusSession: { create: vi.fn() },
     user: { update: vi.fn(), findUnique: vi.fn() },
     dailyStats: { upsert: vi.fn() },
+    activityLog: { create: vi.fn() },
     $transaction: vi.fn(),
   },
 }));

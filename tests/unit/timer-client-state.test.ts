@@ -8,8 +8,10 @@ describe('timer client state normalization', () => {
   it('normalizes unknown payload into deterministic defaults', () => {
     expect(normalizeTimerPayload(undefined)).toEqual({
       active: false,
+      paused: false,
       startedAtMs: null,
       todaySeconds: 0,
+      todayMinutes: 0,
       dayKey: null,
       redisAvailable: true,
     });

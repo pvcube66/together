@@ -20,6 +20,7 @@ const pool = new Pool({
   },
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- @prisma/adapter-pg and @opentelemetry/instrumentation-pg use incompatible @types/pg versions
 const adapter = new PrismaPg(pool as any);
 
 declare global {
