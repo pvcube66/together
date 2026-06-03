@@ -233,6 +233,8 @@ export async function readTimerState(userId: string): Promise<TimerState> {
       _sum: { durationMin: true },
     }),
   ]);
+
+
   const todayMinutes = (focusAgg._sum.durationMin ?? 0) + (activityAgg._sum.durationMin ?? 0);
   return buildTimerState({
     active: live !== null,

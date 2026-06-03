@@ -1134,15 +1134,10 @@ export function registerSocketEvents(io: StudyServer) {
     });
 
     socket.on('disconnect', async () => {
-      const liveSession = await redis.getdel<LiveSession>(
-        getLiveSessionKey(socket.data.userId),
-      );
-      if (liveSession) {
-        try {
-          // finalizeSession emits `session:logged` which is a no-op on a disconnected socket
-          await finalizeSession(io, socket, liveSession);
-        } catch {}
-      }
+      // Don't finalize the session — the user may reconnect or come back later.
+      // The session persists in Redis with its 12h TTL and is only finalized
+      // when the user explicitly stops it, or when a new session is started
+      // (which finalizes the old one via takeLiveSession in startLiveStudySession).
 
       await Promise.all(
         socket.data.joinedRoomIds.map((roomId: string) =>
